@@ -444,59 +444,14 @@
                     <input type="text" id="search-box" data-translate-key="searchPlaceholder" placeholder="Search...">
                 </div>
             </header>
-            <div class="hero-slider" id="hero-slider"></div>
             <main>
-                <div id="dashboard-overview" class="dashboard-grid hidden"></div>
-                <section id="insights-banner" class="insights-banner hidden">
-                    <div class="insights-copy">
-                        <h3></h3>
-                        <p></p>
-                    </div>
-                    <div class="cta-group">
-                        <button id="insights-primary-btn" class="btn"></button>
-                        <button id="insights-secondary-btn" class="btn guest-btn"></button>
-                    </div>
+                <section id="all-movies-section" class="all-movies-section hidden">
+                    <h2 class="category-title all-movies-title" data-translate-key="allMovies">All Movies</h2>
+                    <div id="all-movies-grid" class="all-movies-grid"></div>
                 </section>
-                <div id="quick-actions-grid" class="quick-actions-grid hidden"></div>
-                <div id="genre-pill-scroller" class="pill-scroller hidden"></div>
-                <div id="collection-grid" class="collection-grid hidden"></div>
                 <div id="search-results" class="hidden">
-                    <h2 class="category-title" style="padding:0 10px" data-translate-key="searchResults">Search Results</h2>
-                    <div class="movie-row" id="search-results-row" style="padding:0 10px"></div>
-                </div>
-                <div id="main-categories">
-                    <section class="category-row">
-                        <div class="category-header">
-                            <h2 class="category-title" data-translate-key="categoryUpcoming">Coming Soon</h2>
-                            <a href="#" onclick="event.preventDefault(); showUpcomingPage()" class="view-all-link" data-translate-key="viewAll">View All</a>
-                        </div>
-                        <div class="movie-row" id="upcoming-row"></div>
-                    </section>
-                    <section class="category-row">
-                        <h2 class="category-title" data-translate-key="categoryRecent" style="padding: 0 10px;">Recent Uploads</h2>
-                        <div class="movie-row" id="recent-row"></div>
-                    </section>
-                    <section class="category-row">
-                        <div class="category-header">
-                            <h2 class="category-title" data-translate-key="categoryHollywood">Hollywood</h2>
-                            <a href="#" onclick="event.preventDefault(); showCategoryPage('Hollywood')" class="view-all-link" data-translate-key="viewAll">View All</a>
-                        </div>
-                        <div class="movie-row" id="hollywood-row"></div>
-                    </section>
-                    <section class="category-row">
-                         <div class="category-header">
-                            <h2 class="category-title" data-translate-key="categoryBollywood">Bollywood</h2>
-                            <a href="#" onclick="event.preventDefault(); showCategoryPage('Bollywood')" class="view-all-link" data-translate-key="viewAll">View All</a>
-                        </div>
-                        <div class="movie-row" id="bollywood-row"></div>
-                    </section>
-                    <section class="category-row">
-                        <div class="category-header">
-                            <h2 class="category-title" data-translate-key="categorySouth">South Indian</h2>
-                            <a href="#" onclick="event.preventDefault(); showCategoryPage('South Indian')" class="view-all-link" data-translate-key="viewAll">View All</a>
-                        </div>
-                        <div class="movie-row" id="south-indian-row"></div>
-                    </section>
+                    <h2 class="category-title all-movies-title" data-translate-key="searchResults">Search Results</h2>
+                    <div id="search-results-grid" class="all-movies-grid"></div>
                 </div>
             </main>
         </div>
