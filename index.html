@@ -125,6 +125,16 @@
         .movie-row{display:flex;overflow-x:auto;gap:10px;padding-bottom:10px;scrollbar-width:none; padding-left: 10px; padding-right: 10px;}
         .movie-row::-webkit-scrollbar{display:none}
 
+        .all-movies-section{padding:18px 0 40px;}
+        .all-movies-grid{display:flex;flex-direction:column;gap:40px;padding:0 10px;}
+        .category-group{display:flex;flex-direction:column;gap:18px;}
+        .category-heading{font-family:'Bebas Neue','Manrope',sans-serif;font-size:1.6em;font-weight:800;letter-spacing:0.26em;text-transform:uppercase;color:#fff;margin:0 0 6px 6px;text-shadow:0 10px 24px rgba(0,0,0,0.45);}
+        .category-movie-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px;}
+        .category-movie-grid .movie-poster{flex:auto;}
+        .movies-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px;padding:0 10px;}
+        .movies-grid .movie-poster{flex:auto;}
+        .all-movies-title{margin-bottom:28px;padding-left:12px;}
+
         .movie-poster{flex:0 0 calc(33.33% - 7px);cursor:pointer;position:relative;border-radius:18px;overflow:hidden; box-shadow: 0 18px 32px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); transition: transform 0.25s ease, box-shadow 0.25s ease; background:rgba(255,255,255,0.02);} 
         .movie-poster::before{content:"";position:absolute;inset:-2px;background:linear-gradient(135deg,rgba(229,9,20,0.0),rgba(229,9,20,0.45));opacity:0;transition:opacity 0.25s ease;z-index:0;}
         .movie-poster:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 28px 46px rgba(0,0,0,0.45); }
@@ -451,7 +461,7 @@
                 </section>
                 <div id="search-results" class="hidden">
                     <h2 class="category-title all-movies-title" data-translate-key="searchResults">Search Results</h2>
-                    <div id="search-results-grid" class="all-movies-grid"></div>
+                    <div id="search-results-grid" class="movies-grid"></div>
                 </div>
             </main>
         </div>
@@ -671,7 +681,7 @@
             en: {
                 login: 'Login', signup: 'Sign Up', emailPlaceholder: 'Email', passwordPlaceholder: 'Password', continueAsGuest: 'Continue as Guest', newToMovieBox: 'New to Z7X Prime? ', signupNow: 'Sign up now.', alreadyHaveAccount: 'Already have an account? ',
                 logout: 'Logout', searchPlaceholder: 'Search...', searchResults: 'Search Results',
-                categoryRecent: 'Recent Uploads', categoryHollywood: 'Hollywood', categoryBollywood: 'Bollywood', categorySouth: 'South Indian', categoryUpcoming: 'Coming Soon', viewAll: 'View All',
+                categoryRecent: 'Recent Uploads', categoryHollywood: 'Hollywood', categoryBollywood: 'Bollywood', categorySouth: 'South Indian', categoryUpcoming: 'Coming Soon', categoryUncategorized: 'Uncategorized', viewAll: 'View All',
                 goHome: 'GO HOME', download: 'DOWNLOAD', playMovieTitle: 'Play Movie', storyline: 'Storyline', topCast: 'Top Billed Cast', screenshots: 'Screenshots', similarMovies: 'Similar Movies', comments: 'Comments', addCommentPlaceholder: 'Add a public comment...', commentBtn: 'Comment',
                 profile: 'PROFILE', home: 'HOME', settings: 'SETTINGS', upgrade: 'UPGRADE',
                 emailLabel: 'Email:', statusLabel: 'Status:', guestUserMessage: 'You are currently browsing as a guest.', loginSignup: 'Login / Sign Up',
@@ -723,6 +733,9 @@
                 quickActionReset: "Reset Explore",
                 quickActionResetDesc: "Return to the full catalog and browse freely.",
                 genreAll: "All Highlights",
+                allMovies: "All Movies",
+                noMoviesYet: "No movies available yet.",
+                noMoviesFound: "No matching movies found.",
                 collectionPremiumTitle: "Premium Exclusives",
                 collectionPremiumTag: "VIP Access",
                 collectionTopRatedTitle: "Top Rated Gems",
@@ -755,6 +768,90 @@
             },
         };
 
+        Object.assign(translations.hi, {
+            login: '??? ?? ????',
+            signup: '???? ?? ????',
+            emailPlaceholder: '????',
+            passwordPlaceholder: '???????',
+            continueAsGuest: '????? ?? ??? ??? ???? ????',
+            newToMovieBox: 'Z7X Prime ??? ?? ???? ',
+            signupNow: '??? ???? ?? ?????',
+            alreadyHaveAccount: '???? ?? ?? ?? ???? ??? ',
+            logout: '??? ???',
+            searchPlaceholder: '?????...',
+            searchResults: '??? ?? ??????',
+            categoryRecent: '??? ?? ?????',
+            categoryHollywood: '???????',
+            categoryBollywood: '???????',
+            categorySouth: '?????? ??????',
+            categoryUpcoming: '???? ? ??? ??',
+            categoryUncategorized: '????',
+            viewAll: '??? ?????',
+            goHome: '??? ?? ????',
+            download: '???????',
+            playMovieTitle: '???? ?????',
+            storyline: '?????',
+            topCast: '????? ??????',
+            screenshots: '??????????',
+            similarMovies: '?????-????? ???????',
+            comments: '??????????',
+            addCommentPlaceholder: '?? ????????? ??????? ??????...',
+            commentBtn: '??????? ????',
+            profile: '?????????',
+            home: '???',
+            settings: '????????',
+            upgrade: '???????',
+            emailLabel: '????:',
+            statusLabel: '??????:',
+            guestUserMessage: '?? ??????? ??? ????? ?? ??? ??? ??????? ?? ??? ????',
+            loginSignup: '??? ?? / ???? ??',
+            appLanguage: '?? ?? ????',
+            appTheme: '?? ?? ???',
+            themeLight: '????',
+            themeDark: '?????',
+            themeNeo: '????',
+            appVersion: '?? ???????',
+            close: '??? ????',
+            loginRequiredTitle: '??????? ?????? ??',
+            loginRequiredDesc: '?? ???? ?? ????? ?? ??? ?????? ??????? ????? ???',
+            viewPlans: '??????? ?????',
+            subscribedWelcomeTitle: '????? ?? ?????? ??!',
+            subscribedWelcomeText: '???? ??????? ?????? ??? ??? ???????? ??????? ?? ???? ????',
+            freeWelcomeTitle: '???????? ?????? ??????? ????!',
+            freeWelcomeText: '???? ????? ?? ??? ??? ???? ????? ????? ??? ??????? ???? ????? ????:\n? ??? ???? ????? ?? ??????? ????\n? ???-????? ??????????\n? ????????-????? ?????\n? 24x7 ?????????? ??????',
+            upgradeToPremium: '???????? ??? ??????? ????',
+            downloadQrCode: '?????? ??? ??????? ????',
+            subscriptionPlans: '??????? ???????',
+            contactAdmin: '????? ?? ?????? ????',
+            expiresOn: '??????? ????',
+            like: '????',
+            liked: '???? ????',
+            movieRequest: '???? ??????',
+            requestBtn: '??????',
+            requestMovieTitle: '???? ?? ?????? ????',
+            requestMovieDesc: '??? ???? ???? ??? ???? ???? ?????!',
+            movieTitle: '???? ?? ??????',
+            releaseYear: '?????? ????',
+            movieLanguage: '????',
+            sendRequest: '?????? ?????',
+            requestSuccess: '?????? ??????????? ???? ???!',
+            requestError: '?????? ????? ??? ??????? ???? ?????? ?????',
+            requestNeedsLogin: '???? ?????? ???? ?? ??? ??? ?? ?????',
+            countdownDays: '???',
+            countdownHours: '????',
+            countdownMinutes: '????',
+            countdownSeconds: '?????',
+            releaseDate: '?????? ?? ?????',
+            released: '?????? ?? ??!',
+            devCodes: '?????? ?? ???',
+            viewBtn: '?????',
+            downloadCode: '???????',
+            contactDev: '?????? ?? ??????',
+            allMovies: '??? ????????',
+            noMoviesYet: '??? ??? ?????? ?????? ???? ???',
+            noMoviesFound: '??? ????? ???? ???? ?????? ???? ?????'
+        });
+
         function isUserSubscribed() {
             if (!currentUser || currentUser.isGuest || !currentUser.status || currentUser.status === 'FREE') return false;
             if (!currentUser.subscriptionExpiry) return false;
@@ -765,7 +862,7 @@
         function loadTheme() { const savedTheme = localStorage.getItem('movieBoxTheme') || 'dark'; applyTheme(savedTheme); }
         function updateThemeButtonsUI() { const currentTheme = document.body.dataset.theme; document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === currentTheme));}
 
-        function applyLanguage(lang) { document.documentElement.lang = lang; document.querySelectorAll('[data-translate-key]').forEach(el => { const key = el.dataset.translateKey; const translation = (translations[lang] && translations[lang][key]) || translations.en[key]; if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { el.placeholder = translation; } else if (el.title) { el.title = translation; } else { el.textContent = translation; } }); localStorage.setItem('movieBoxLanguage', lang); document.getElementById('language-switcher').value = lang; }
+        function applyLanguage(lang) { document.documentElement.lang = lang; document.querySelectorAll('[data-translate-key]').forEach(el => { const key = el.dataset.translateKey; const translation = (translations[lang] && translations[lang][key]) || translations.en[key]; if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { el.placeholder = translation; } else if (el.title) { el.title = translation; } else { el.textContent = translation; } }); localStorage.setItem('movieBoxLanguage', lang); document.getElementById('language-switcher').value = lang; renderAllMovies(); const searchBox = document.getElementById('search-box'); if (searchBox && searchBox.value.trim().length > 2) { const event = new Event('keyup'); searchBox.dispatchEvent(event); } }
         function loadLanguage() { const savedLang = localStorage.getItem('movieBoxLanguage') || 'en'; applyLanguage(savedLang); }
 
         window.onload = () => {
@@ -890,17 +987,7 @@
         function forceLogin() { closeModal('login-prompt-modal'); if (currentUser.isGuest) { document.getElementById('main-app').style.display = 'none'; document.getElementById('login-page').classList.remove('hidden'); } else { auth.signOut().then(() => window.location.reload()); } }
         
         function populateHomePage() {
-            populateUpcomingRow('upcoming-row', allUpcomingMovies);
-            populateRow('recent-row', allMovies.slice(0, 15));
-            populateRow('hollywood-row', allMovies.filter(m => m.category === 'Hollywood'));
-            populateRow('bollywood-row', allMovies.filter(m => m.category === 'Bollywood'));
-            populateRow('south-indian-row', allMovies.filter(m => m.category === 'South Indian'));
-            startSlider();
-            renderDashboardOverview();
-            renderInsightsBanner();
-            renderQuickActions();
-            renderGenrePills();
-            renderCollectionGrid();
+            renderAllMovies();
             loadUserCounts();
         }
         
@@ -1238,7 +1325,7 @@
             const t = translations[lang] || translations.en;
             const searchSection = document.getElementById('search-results');
             const searchTitle = searchSection ? searchSection.querySelector('h2') : null;
-            const mainCategories = document.getElementById('main-categories');
+            const allSection = document.getElementById('all-movies-section');
             let results = [];
             let title = t.searchResults || 'Search Results';
 
@@ -1269,29 +1356,83 @@
                 return;
             }
 
-            populateRow('search-results-row', results);
+            renderMoviesToGrid('search-results-grid', results, t.noMoviesFound || 'No matching movies found.');
             if (searchSection) {
                 searchSection.classList.remove('hidden');
                 if (searchTitle) searchTitle.textContent = title;
             }
-            if (mainCategories) mainCategories.classList.add('hidden');
-            document.getElementById('search-box').value = '';
+            if (allSection) allSection.classList.add('hidden');
+            const searchBox = document.getElementById('search-box');
+            if (searchBox) searchBox.value = '';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function resetExplore() {
             const searchSection = document.getElementById('search-results');
-            const mainCategories = document.getElementById('main-categories');
+            const allSection = document.getElementById('all-movies-section');
             if (searchSection) searchSection.classList.add('hidden');
-            if (mainCategories) mainCategories.classList.remove('hidden');
-            document.getElementById('search-box').value = '';
+            if (allSection) {
+                allSection.classList.remove('hidden');
+                renderAllMovies();
+            }
+            const searchBox = document.getElementById('search-box');
+            if (searchBox && searchBox.value) searchBox.value = '';
         }
         
+        function renderAllMovies() {
+            const section = document.getElementById('all-movies-section');
+            const container = document.getElementById('all-movies-grid');
+            if (!section || !container) return;
+
+            const lang = document.documentElement.lang || 'en';
+            const t = translations[lang] || translations.en;
+
+            if (!allMovies.length) {
+                container.innerHTML = `<div class="empty-state">${t.noMoviesYet || 'No movies available yet.'}</div>`;
+                section.classList.remove('hidden');
+                return;
+            }
+
+            const grouped = allMovies.reduce((acc, movie) => {
+                const category = (movie.category && movie.category.trim()) || 'Uncategorized';
+                (acc[category] = acc[category] || []).push(movie);
+                return acc;
+            }, {});
+
+            const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                if (a === 'Uncategorized') return 1;
+                if (b === 'Uncategorized') return -1;
+                return a.localeCompare(b);
+            });
+
+            container.innerHTML = sortedCategories.map(category => {
+                const movies = grouped[category];
+                const sortedMovies = movies.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const key = 'category' + category.replace(/\s/g, '').replace('Indian', 'South');
+                const label = (t[key] || (category === 'Uncategorized' ? (t.categoryUncategorized || 'Uncategorized') : category));
+                return `<div class="category-group"><h3 class="category-heading">${label}</h3><div class="category-movie-grid">${sortedMovies.map(createMoviePoster).join('')}</div></div>`;
+            }).join('');
+
+            section.classList.remove('hidden');
+        }
+
+        function renderMoviesToGrid(gridId, movies, emptyMessage) {
+            const grid = document.getElementById(gridId);
+            if (!grid) return;
+            if (!movies || movies.length === 0) {
+                grid.innerHTML = `<div class="empty-state">${emptyMessage}</div>`;
+                return;
+            }
+            grid.innerHTML = movies.map(createMoviePoster).join('');
+        }
+
         function populateRow(rowId, movies) {
             const row = document.getElementById(rowId);
             if (!row) return;
+            const lang = document.documentElement.lang || 'en';
+            const t = translations[lang] || translations.en;
             if (!movies || movies.length === 0) {
-                row.innerHTML = `<div class="empty-state">No movies in this category yet.</div>`;
+                row.innerHTML = `<div class="empty-state">${t.noMoviesYet || 'No movies available yet.'}</div>`;
                 return;
             }
             row.innerHTML = movies.map(createMoviePoster).join('');
@@ -1394,21 +1535,22 @@
             window.scrollTo(0, 0);
         }
 
-        function showHomePage() { showPage('home-page'); updateNav('home'); }
+        function showHomePage() { showPage('home-page'); updateNav('home'); resetExplore(); }
         function showSettingsPage() { showPage('settings-page'); updateThemeButtonsUI(); updateNav('settings'); }
 
         function showCategoryPage(categoryName) {
             showPage('category-view-page');
             const lang = document.documentElement.lang;
+            const t = translations[lang] || translations.en;
             const categoryKey = 'category' + categoryName.replace(/\s/g, '').replace('Indian', 'South');
-            const translatedTitle = (translations[lang] && translations[lang][categoryKey]) || categoryName;
+            const translatedTitle = (t && t[categoryKey]) || categoryName;
             document.getElementById('category-view-title').textContent = translatedTitle;
 
             const moviesForCategory = allMovies.filter(m => m.category === categoryName);
             const gridContainer = document.getElementById('category-grid-container');
             gridContainer.innerHTML = moviesForCategory.length 
                 ? moviesForCategory.map(createMoviePoster).join('') 
-                : `<p>No movies in this category.</p>`;
+                : `<p class="empty-state">${t.noMoviesYet || 'No movies available yet.'}</p>`;
             
             updateNav('home'); // Keep home nav active
         }
@@ -1600,23 +1742,23 @@
         document.getElementById('search-box').addEventListener('keyup', e => {
             const term = e.target.value.trim().toLowerCase();
             const resultsDiv = document.getElementById('search-results');
-            const mainCategories = document.getElementById('main-categories');
+            const allSection = document.getElementById('all-movies-section');
             const lang = document.documentElement.lang || 'en';
             const t = translations[lang] || translations.en;
             const searchTitle = resultsDiv ? resultsDiv.querySelector('h2') : null;
 
             if (term.length > 2) {
                 const matched = allMovies.filter(m => (m.title || '').toLowerCase().includes(term));
-                populateRow('search-results-row', matched);
+                renderMoviesToGrid('search-results-grid', matched, t.noMoviesFound || 'No matching movies found.');
                 if (searchTitle) searchTitle.textContent = t.searchResults || 'Search Results';
                 if (resultsDiv) resultsDiv.classList.remove('hidden');
-                if (mainCategories) mainCategories.classList.add('hidden');
+                if (allSection) allSection.classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                resetExplore();
-                activeGenreFilter = 'all';
-                const scroller = document.getElementById('genre-pill-scroller');
-                if (scroller) {
-                    scroller.querySelectorAll('.genre-pill').forEach(pill => pill.classList.toggle('active', pill.dataset.genre === 'all'));
+                if (resultsDiv) resultsDiv.classList.add('hidden');
+                if (allSection) {
+                    allSection.classList.remove('hidden');
+                    renderAllMovies();
                 }
             }
         });
