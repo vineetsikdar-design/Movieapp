@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie App - ADMIN Panel</title>
+    <style>
+        :root {
+            --deep-black: #000000;
+            --deep-red: #8B0000;
+            --text-light: #f5f5f5;
+            --border-color: #333333;
+            --gold: #b49b3c;
+            --blue: #0d6efd;
+            --green: #28a745;
+        }
+        body {
+            background-color: var(--deep-black);
+            color: var(--text-light);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1, h2 { color: var(--deep-red); text-align: center; }
+        .hidden { display: none; }
+
+        /* --- Login Section --- */
+        #login-container { padding-top: 50px; }
+        .form-section { background-color: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #ccc; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+            width: 100%; padding: 10px; background-color: #333; border: 1px solid #555;
+            color: var(--text-light); border-radius: 4px; box-sizing: border-box;
+        }
+        .btn {
+            width: 100%; padding: 12px; background-color: var(--deep-red); color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold;
+        }
+        #login-error { color: var(--deep-red); text-align: center; margin-top: 10px; }
+
+        /* --- Admin Panel --- */
+        #admin-panel-container header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--deep-red); padding-bottom: 10px; margin-bottom: 20px; }
+        #admin-panel-container h1 { margin: 0; }
+        #logout-btn { background: var(--deep-red); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+
+        /* --- Tabs & Lists --- */
+        .tab-buttons { display: flex; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-button { background: var(--border-color); color: var(--text-light); border: 1px solid var(--deep-red); padding: 10px; cursor: pointer; flex-grow: 1; text-align: center; }
+        .tab-button.active { background: var(--deep-red); }
+        .list-container { display: flex; flex-direction: column; gap: 15px; }
+        .list-item { display: flex; align-items: center; background-color: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .list-item img { width: 50px; height: 75px; object-fit: cover; border-radius: 4px; margin-right: 15px; flex-shrink: 0; }
+        .item-info { flex-grow: 1; }
+        .item-info h3 { margin: 0 0 5px 0; font-size: 1.1em; }
+        .item-actions button { background: none; border: 1px solid var(--deep-red); color: var(--deep-red); padding: 5px 8px; margin-left: 5px; cursor: pointer; border-radius: 4px; }
+        #qr-preview { max-width: 150px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+        
+        /* --- Subscription Plan Styles --- */
+        #subscription-plans-form { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; }
+        .plan-editor { flex: 1; min-width: 220px; background-color: #222; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .plan-editor h3 { color: var(--deep-red); margin-top: 0; text-align: left;}
+
+        /* --- Analytics Tab Styles --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #1a1a1a; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid var(--deep-red); }
+        .stat-card h3 { margin: 0 0 10px; font-size: 1em; color: #ccc; }
+        .stat-card .count { font-size: 2.2em; font-weight: bold; color: var(--text-light); }
+        .stat-card .sub-count { font-size: 0.9em; color: #aaa; }
+        .top-movies-list { list-style: none; padding: 0; }
+        .top-movies-list li { background: #1a1a1a; padding: 10px; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .top-movies-list .movie-name { font-weight: bold; }
+        .top-movies-list .movie-stats { font-size: 0.9em; color: #ccc; }
+
+        /* --- Modal --- */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+        .modal-content { background-color: var(--deep-black); margin: 5% auto; padding: 20px; border: 1px solid var(--deep-red); width: 90%; max-width: 600px; border-radius: 8px; position: relative; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="login-container"><h1>Admin Login</h1><div class="form-section"><form id="login-form"><div class="form-group"><label for="email">Email</label><input type="email" id="email" required value="admin@moviebox.com"></div><div class="form-group"><label for="password">Password</label><input type="password" id="password" required></div><button type="submit" class="btn">Login</button><p id="login-error" class="hidden"></p></form></div></div>
+        
+        <!-- Admin Panel -->
+        <div id="admin-panel-container" class="hidden">
+            <header><h1>Admin Panel</h1><button id="logout-btn">Logout</button></header>
+            <div class="tab-buttons">
+                <button class="tab-button" onclick="showTab('analytics')">Analytics</button>
+                <button class="tab-button" onclick="showTab('add-movie')">Add Movie</button>
+                <button class="tab-button" onclick="showTab('edit-movie')">Edit Movies</button>
+                <button class="tab-button" onclick="showTab('upcoming-movie')">Upcoming Movie</button>
+                <button class="tab-button" onclick="showTab('dev-code')">Developer's Code</button>
+                <button class="tab-button" onclick="showTab('movie-requests')">Movie Requests</button>
+                <button class="tab-button" onclick="showTab('user-mgmt')">Users</button>
+                <button class="tab-button" onclick="showTab('subscriptions')">Subscriptions</button>
+                <button class="tab-button" onclick="showTab('payment-info')">Payment Info</button>
+                <button class="tab-button" onclick="showTab('maintenance-mode')">Maintenance</button>
+            </div>
+            
+            <div id="analytics" class="tab-content hidden">
+                <h2>App Statistics</h2>
+                <div id="analytics-loader"><p>Loading stats...</p></div>
+                <div id="analytics-content" class="hidden">
+                    <div class="stats-grid" id="stats-cards-container">
+                        <!-- Stat cards will be inserted here by JS -->
+                    </div>
+                    <h2>Top 10 Most Viewed Movies</h2>
+                    <ul class="top-movies-list" id="top-viewed-movies"></ul>
+                </div>
+            </div>
+
+            <div id="add-movie" class="tab-content"><div class="form-section"><div class="form-group"><label for="tmdb-id">TMDB Movie ID</label><input type="text" id="tmdb-id" placeholder="e.g., 550"></div><button class="btn" onclick="fetchMovieData()">Fetch from TMDB</button><div id="fetched-data"></div></div><div class="form-section"><h3>Manual Details</h3><div class="form-group"><label for="access">Access Level</label><select id="access"><option value="FREE">FREE</option><option value="VIP">VIP (Subscribers Only)</option></select></div><div class="form-group"><label for="language">Language</label><input type="text" id="language"></div><div class="form-group"><label for="movie-link">Movie Link</label><input type="text" id="movie-link"></div><div class="form-group"><label for="screenshot1">Screenshot 1 URL</label><input type="text" id="screenshot1"></div><div class="form-group"><label for="screenshot2">Screenshot 2 URL</label><input type="text" id="screenshot2"></div><div class="form-group"><label for="category">Category</label><select id="category"><option value="Hollywood">Hollywood</option><option value="Bollywood">Bollywood</option><option value="South Indian">South Indian</option></select></div><button class="btn" onclick="saveMovie()">Save Movie</button></div></div>
+            <div id="edit-movie" class="tab-content hidden"><h2>All Movies</h2><div id="movie-list-container" class="list-container"></div></div>
+            
+            <div id="upcoming-movie" class="tab-content hidden">
+                <h2>Add Upcoming Movie</h2>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="upcoming-title">Movie Title</label>
+                        <input type="text" id="upcoming-title" placeholder="Enter movie title">
+                    </div>
+                    <div class="form-group">
+                        <label for="upcoming-poster">Poster URL</label>
+                        <input type="text" id="upcoming-poster" placeholder="Enter poster image URL">
+                    </div>
+                    <div class="form-group">
+                        <label for="upcoming-release-date">Release Date</label>
+                        <input type="date" id="upcoming-release-date">
+                    </div>
+                    <button class="btn" onclick="saveUpcomingMovie()">Save Upcoming Movie</button>
+                </div>
+                <h2>Existing Upcoming Movies</h2>
+                <div id="upcoming-movie-list-container" class="list-container"></div>
+            </div>
+
+            <div id="dev-code" class="tab-content hidden">
+                <h2>Add/Edit Developer Code</h2>
+                <div class="form-section">
+                    <input type="hidden" id="dev-code-key">
+                    <div class="form-group"><label for="dev-code-name">Code Name</label><input type="text" id="dev-code-name" placeholder="e.g., Cool Login Form"></div>
+                    <div class="form-group"><label for="dev-code-icon">Code Icon (URL)</label><input type="text" id="dev-code-icon" placeholder="Link to icon image"></div>
+                    <div class="form-group"><label for="dev-code-category">Code Category</label><input type="text" id="dev-code-category" placeholder="e.g., HTML, JavaScript, Python"></div>
+                    <div class="form-group"><label for="dev-code-details">Code Details</label><textarea id="dev-code-details" rows="4" placeholder="Brief description of the code"></textarea></div>
+                    <div class="form-group"><label for="dev-code-ss1">Screenshot 1 (URL)</label><input type="text" id="dev-code-ss1" placeholder="Link to first screenshot"></div>
+                    <div class="form-group"><label for="dev-code-ss2">Screenshot 2 (URL)</label><input type="text" id="dev-code-ss2" placeholder="Link to second screenshot"></div>
+                    <div class="form-group"><label for="dev-code-download-link">Download Link</label><input type="text" id="dev-code-download-link" placeholder="Link to zip file or repository"></div>
+                    <div class="form-group"><label for="dev-code-admin-contact">Admin Contact Link</label><input type="text" id="dev-code-admin-contact" placeholder="e.g., Telegram link for support"></div>
+                    <button class="btn" onclick="saveDevCode()">Save Code</button>
+                </div>
+                <h2>Existing Codes</h2>
+                <div id="dev-code-list-container" class="list-container"></div>
+            </div>
+
+            <div id="movie-requests" class="tab-content hidden"><h2>Movie Requests</h2><div id="request-list-container" class="list-container"></div></div>
+            <div id="user-mgmt" class="tab-content hidden"><h2>User Management</h2><div id="user-list-container" class="list-container"></div></div>
+            <div id="subscriptions" class="tab-content hidden"><h2>Subscription Plans</h2><div class="form-section"><form id="subscription-plans-form"></form><button type="button" class="btn" onclick="saveSubscriptionPlans()">Save Subscription Plans</button></div></div>
+            <div id="payment-info" class="tab-content hidden"><h2>Payment Details</h2><div class="form-section"><form id="payment-form"><div class="form-group"><label for="account-holder-name">Account Holder Name</label><input type="text" id="account-holder-name" placeholder="Enter name"></div><div class="form-group"><label for="qr-code-url">QR Code Image URL</label><input type="text" id="qr-code-url" placeholder="Enter image link"></div><img id="qr-preview" src="" class="hidden" alt="QR Code Preview"><button type="button" class="btn" onclick="savePaymentDetails()">Update Payment Details</button></form></div></div>
+            <div id="maintenance-mode" class="tab-content hidden"><h2>Server Maintenance</h2><div class="form-section"><div class="form-group"><label for="maintenance-status">Maintenance Mode</label><select id="maintenance-status"><option value="off">OFF</option><option value="on">ON</option></select></div><div class="form-group"><label for="maintenance-notice">Notice to Users</label><textarea id="maintenance-notice" rows="4" placeholder="e.g., The server is currently under maintenance. We will be back shortly."></textarea></div><div class="form-group"><label for="maintenance-link">Contact Link (e.g., Telegram)</label><input type="text" id="maintenance-link" placeholder="e.g., https://t.me/your_username"></div><button class="btn" onclick="saveMaintenanceSettings()">Save Settings</button></div></div>
+        </div>
+    </div>
+    <!-- Modals -->
+    <div id="edit-movie-modal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('edit-movie-modal')">×</span><h2>Edit Movie</h2><input type="hidden" id="edit-movie-key"><div class="form-group"><label for="edit-title">Title</label><input type="text" id="edit-title"></div><div class="form-group"><label for="edit-access">Access</label><select id="edit-access"><option value="FREE">FREE</option><option value="VIP">VIP (Subscribers Only)</option></select></div><div class="form-group"><label for="edit-category">Category</label><select id="edit-category"><option value="Hollywood">Hollywood</option><option value="Bollywood">Bollywood</option><option value="South Indian">South Indian</option></select></div><div class="form-group"><label for="edit-movie-link">Movie Link</label><input type="text" id="edit-movie-link"></div><button class="btn" onclick="updateMovie()">Update Movie</button></div></div>
+    <div id="edit-user-modal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('edit-user-modal')">×</span><h2>Edit User</h2><input type="hidden" id="edit-user-uid"><div class="form-group"><label>Email</label><input type="email" id="edit-user-email" disabled></div><div class="form-group"><label for="edit-user-status">Status</label><select id="edit-user-status"><!-- Populated by JS --></select></div><div class="form-group"><label for="edit-user-expiry">Subscription Expiry Date</label><input type="date" id="edit-user-expiry"><small style="color:#888; display:block; margin-top:4px;">Leave blank to auto-calculate based on plan. Set for FREE to remove expiry.</small></div><button class="btn" onclick="updateUser()">Update User</button></div></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyByCu0u_oNk5XtLSvkIufK2DewkrHdKfHM", authDomain: "bolo-58fc1.firebaseapp.com", databaseURL: "https://bolo-58fc1-default-rtdb.firebaseio.com", projectId: "bolo-58fc1", storageBucket: "bolo-58fc1.firebasestorage.app", messagingSenderId: "182099553790", appId: "1:182099553790:web:4d4f987a1d1b97fe5c64af", measurementId: "G-7DYKKGXB4R" };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const movieRef = database.ref('movie');
+        const usersRef = database.ref('users');
+        const paymentRef = database.ref('Payment');
+        const maintenanceRef = database.ref('maintenance');
+        const subscriptionsRef = database.ref('subscriptions');
+        const statsRef = database.ref('stats');
+        const requestRef = database.ref('MovieRequest');
+        const upcomingMovieRef = database.ref('upcomingmovie');
+        const codeRef = database.ref('code');
+        const adminsRef = database.ref('admins'); // Reference to the new admins node
+        const TMDB_API_KEY = '2e211dfda888f7cc55ce433d743f9bc3';
+        
+        let subscriptionPlans = {}; // Cache for plans
+        
+        // --- Auth & UI ---
+        auth.onAuthStateChanged(user => {
+            const loginContainer = document.getElementById('login-container');
+            const adminPanelContainer = document.getElementById('admin-panel-container');
+            
+            if (user) {
+                // Check if the user's UID is in the admins list
+                adminsRef.child(user.uid).once('value', snapshot => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        // User is an admin
+                        loginContainer.classList.add('hidden');
+                        adminPanelContainer.classList.remove('hidden');
+                        showTab('analytics'); // Default to analytics tab
+                    } else {
+                        // User is not an admin, sign them out
+                        auth.signOut();
+                        alert('Access Denied. You are not an authorized admin.');
+                    }
+                });
+            } else {
+                // No user is signed in
+                loginContainer.classList.remove('hidden');
+                adminPanelContainer.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => { 
+            e.preventDefault(); 
+            const email = e.target.email.value; 
+            const password = e.target.password.value; 
+            auth.signInWithEmailAndPassword(email, password).catch(err => {
+                document.getElementById('login-error').textContent = err.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            }); 
+        });
+        document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+        function showTab(tabId) { document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden')); document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active')); document.getElementById(tabId).classList.remove('hidden'); document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active'); if (tabId === 'edit-movie') loadMoviesForEditing(); if (tabId === 'user-mgmt') loadUsers(); if (tabId === 'payment-info') loadPaymentInfo(); if (tabId === 'maintenance-mode') loadMaintenanceSettings(); if(tabId === 'subscriptions') loadSubscriptionPlans(); if (tabId === 'analytics') loadAnalytics(); if (tabId === 'movie-requests') loadMovieRequests(); if (tabId === 'upcoming-movie') loadUpcomingMovies(); if (tabId === 'dev-code') loadDevCodes(); }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        
+        // --- Movie CRUD ---
+        let tempMovieData = {};
+        async function fetchMovieData() { const movieId = document.getElementById('tmdb-id').value; if (!movieId) return; const fdc = document.getElementById('fetched-data'); fdc.innerHTML = '<p>Fetching...</p>'; try { const [movRes, credRes] = await Promise.all([fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`), fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`)]); const mov = await movRes.json(); const cred = await credRes.json(); const cast = cred.cast.slice(0, 10).map(c => ({ name: c.name, photo: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : '' })); tempMovieData = { title: mov.title, poster: `https://image.tmdb.org/t/p/w500${mov.poster_path}`, backdrop: `https://image.tmdb.org/t/p/original${mov.backdrop_path}`, year: new Date(mov.release_date).getFullYear(), rating: mov.vote_average.toFixed(1), storyline: mov.overview, cast: cast, timestamp: firebase.database.ServerValue.TIMESTAMP }; fdc.innerHTML = `<p><strong>Title:</strong> ${tempMovieData.title}</p>`; } catch (error) { fdc.innerHTML = `<p style="color:red;">Error fetching.</p>`; } }
+        function saveMovie() { if (!tempMovieData.title) { alert('Fetch data first.'); return; } const movieData = { ...tempMovieData, access: document.getElementById('access').value, language: document.getElementById('language').value, movieLink: document.getElementById('movie-link').value, screenshots: [document.getElementById('screenshot1').value, document.getElementById('screenshot2').value].filter(Boolean), category: document.getElementById('category').value, likeCount: 0, viewCount: 0 }; movieRef.push(movieData).then(() => { alert('Movie saved!'); document.getElementById('add-movie').querySelectorAll('input, select, textarea').forEach(el => el.value = ''); document.getElementById('fetched-data').innerHTML = ''; tempMovieData = {}; }); }
+        
+        function loadMoviesForEditing() { const list = document.getElementById('movie-list-container'); list.innerHTML = '<p>Loading...</p>'; movieRef.orderByChild('timestamp').once('value', snapshot => { list.innerHTML = ''; if (!snapshot.exists()) { list.innerHTML = '<p>No movies found.</p>'; return; } let moviesArray = []; snapshot.forEach(childSnapshot => { moviesArray.push({ key: childSnapshot.key, ...childSnapshot.val() }); }); moviesArray.reverse().forEach(m => { const el = document.createElement('div'); el.className = 'list-item'; const safeTitle = (m.title || 'Untitled').replace(/'/g, "\\'"); el.innerHTML = `<img src="${m.poster || ''}" alt="p"><div class="item-info"><h3>${m.title || 'Untitled'}</h3><p>${m.year || 'N/A'} - <strong>${m.access || 'FREE'}</strong><br><small>👁️ ${m.viewCount || 0} | ❤️ ${m.likeCount || 0}</small></p></div><div class="item-actions"><button onclick="openEditMovieModal('${m.key}')">Edit</button><button onclick="deleteMovie('${m.key}','${safeTitle}')">Delete</button></div>`; list.appendChild(el); }); }); }
+        function openEditMovieModal(key) { movieRef.child(key).once('value', s => { const m = s.val(); document.getElementById('edit-movie-key').value = key; document.getElementById('edit-title').value = m.title; document.getElementById('edit-access').value = m.access || 'FREE'; document.getElementById('edit-category').value = m.category; document.getElementById('edit-movie-link').value = m.movieLink; document.getElementById('edit-movie-modal').style.display = 'block'; }); }
+        function updateMovie() { const key = document.getElementById('edit-movie-key').value; const data = { title: document.getElementById('edit-title').value, access: document.getElementById('edit-access').value, category: document.getElementById('edit-category').value, movieLink: document.getElementById('edit-movie-link').value }; movieRef.child(key).update(data).then(() => { alert('Updated!'); closeModal('edit-movie-modal'); loadMoviesForEditing(); }); }
+        function deleteMovie(key, title) { if (confirm(`Delete "${title}"?`)) movieRef.child(key).remove().then(loadMoviesForEditing); }
+        
+        // --- Upcoming Movie Management ---
+        function saveUpcomingMovie() {
+            const title = document.getElementById('upcoming-title').value;
+            const poster = document.getElementById('upcoming-poster').value;
+            const releaseDate = document.getElementById('upcoming-release-date').value;
+
+            if (!title || !poster || !releaseDate) {
+                alert('Please fill all fields for the upcoming movie.');
+                return;
+            }
+
+            const data = { title, poster, releaseDate, timestamp: firebase.database.ServerValue.TIMESTAMP };
+            upcomingMovieRef.push(data).then(() => {
+                alert('Upcoming movie saved!');
+                document.getElementById('upcoming-title').value = '';
+                document.getElementById('upcoming-poster').value = '';
+                document.getElementById('upcoming-release-date').value = '';
+                loadUpcomingMovies(); // Refresh list
+            });
+        }
+        function loadUpcomingMovies() {
+            const list = document.getElementById('upcoming-movie-list-container');
+            list.innerHTML = '<p>Loading...</p>';
+            upcomingMovieRef.orderByChild('timestamp').once('value', snapshot => {
+                list.innerHTML = '';
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<p>No upcoming movies found.</p>';
+                    return;
+                }
+                let moviesArray = [];
+                snapshot.forEach(childSnapshot => {
+                    moviesArray.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                });
+                moviesArray.reverse().forEach(movie => {
+                    const el = document.createElement('div');
+                    el.className = 'list-item';
+                    const safeTitle = (movie.title || 'Untitled').replace(/'/g, "\\'");
+                    el.innerHTML = `
+                        <img src="${movie.poster || ''}" alt="poster">
+                        <div class="item-info">
+                            <h3>${movie.title || 'Untitled'}</h3>
+                            <p>Releases: ${movie.releaseDate || 'N/A'}</p>
+                        </div>
+                        <div class="item-actions">
+                            <button onclick="deleteUpcomingMovie('${movie.key}', '${safeTitle}')">Delete</button>
+                        </div>`;
+                    list.appendChild(el);
+                });
+            });
+        }
+        function deleteUpcomingMovie(key, title) {
+            if (confirm(`Delete upcoming movie "${title}"?`)) {
+                upcomingMovieRef.child(key).remove().then(loadUpcomingMovies);
+            }
+        }
+
+        // --- Developer Code CRUD ---
+        function clearDevCodeForm() {
+            document.getElementById('dev-code-key').value = '';
+            document.getElementById('dev-code-name').value = '';
+            document.getElementById('dev-code-icon').value = '';
+            document.getElementById('dev-code-category').value = '';
+            document.getElementById('dev-code-details').value = '';
+            document.getElementById('dev-code-ss1').value = '';
+            document.getElementById('dev-code-ss2').value = '';
+            document.getElementById('dev-code-download-link').value = '';
+            document.getElementById('dev-code-admin-contact').value = '';
+        }
+
+        function saveDevCode() {
+            const key = document.getElementById('dev-code-key').value;
+            const codeData = {
+                name: document.getElementById('dev-code-name').value,
+                icon: document.getElementById('dev-code-icon').value,
+                category: document.getElementById('dev-code-category').value,
+                details: document.getElementById('dev-code-details').value,
+                screenshots: [document.getElementById('dev-code-ss1').value, document.getElementById('dev-code-ss2').value].filter(Boolean),
+                downloadLink: document.getElementById('dev-code-download-link').value,
+                contactLink: document.getElementById('dev-code-admin-contact').value,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (!codeData.name || !codeData.downloadLink) {
+                alert('Code Name and Download Link are required.');
+                return;
+            }
+
+            const promise = key ? codeRef.child(key).update(codeData) : codeRef.push(codeData);
+            promise.then(() => {
+                alert(`Code ${key ? 'updated' : 'saved'} successfully!`);
+                clearDevCodeForm();
+                loadDevCodes();
+            });
+        }
+
+        function loadDevCodes() {
+            const list = document.getElementById('dev-code-list-container');
+            list.innerHTML = '<p>Loading...</p>';
+            codeRef.orderByChild('timestamp').once('value', snapshot => {
+                list.innerHTML = '';
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<p>No codes found.</p>';
+                    return;
+                }
+                let codesArray = [];
+                snapshot.forEach(childSnapshot => {
+                    codesArray.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                });
+                codesArray.reverse().forEach(c => {
+                    const el = document.createElement('div');
+                    el.className = 'list-item';
+                    const safeName = (c.name || 'Untitled').replace(/'/g, "\\'");
+                    el.innerHTML = `
+                        <img src="${c.icon || 'https://via.placeholder.com/50x75.png?text=Code'}" alt="icon">
+                        <div class="item-info">
+                            <h3>${c.name || 'Untitled'}</h3>
+                            <p>${c.category || 'N/A'}</p>
+                        </div>
+                        <div class="item-actions">
+                            <button onclick="editDevCode('${c.key}')">Edit</button>
+                            <button onclick="deleteDevCode('${c.key}', '${safeName}')">Delete</button>
+                        </div>`;
+                    list.appendChild(el);
+                });
+            });
+        }
+
+        function editDevCode(key) {
+            codeRef.child(key).once('value', snapshot => {
+                const data = snapshot.val();
+                document.getElementById('dev-code-key').value = key;
+                document.getElementById('dev-code-name').value = data.name || '';
+                document.getElementById('dev-code-icon').value = data.icon || '';
+                document.getElementById('dev-code-category').value = data.category || '';
+                document.getElementById('dev-code-details').value = data.details || '';
+                document.getElementById('dev-code-ss1').value = data.screenshots ? (data.screenshots[0] || '') : '';
+                document.getElementById('dev-code-ss2').value = data.screenshots ? (data.screenshots[1] || '') : '';
+                document.getElementById('dev-code-download-link').value = data.downloadLink || '';
+                document.getElementById('dev-code-admin-contact').value = data.contactLink || '';
+                window.scrollTo(0, 0); // Scroll to top to see the form
+            });
+        }
+        
+        function deleteDevCode(key, name) {
+            if (confirm(`Are you sure you want to delete the code "${name}"?`)) {
+                codeRef.child(key).remove().then(() => {
+                    alert('Code deleted.');
+                    loadDevCodes();
+                });
+            }
+        }
+
+
+        // --- Movie Requests ---
+        function loadMovieRequests() {
+            const list = document.getElementById('request-list-container');
+            list.innerHTML = '<p>Loading requests...</p>';
+            requestRef.orderByChild('timestamp').on('value', snapshot => {
+                list.innerHTML = '';
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<p>No movie requests found.</p>';
+                    return;
+                }
+                let requestsArray = [];
+                snapshot.forEach(childSnapshot => {
+                    requestsArray.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                });
+                requestsArray.reverse().forEach(r => {
+                    const el = document.createElement('div');
+                    el.className = 'list-item';
+                    const requestDate = new Date(r.timestamp).toLocaleString();
+                    const safeTitle = (r.title || 'Untitled').replace(/'/g, "\\'");
+                    el.innerHTML = `
+                        <div class="item-info">
+                            <h3>${r.title}</h3>
+                            <p>
+                                <strong>Year:</strong> ${r.year || 'N/A'} | 
+                                <strong>Language:</strong> ${r.language || 'N/A'}<br>
+                                <small>Requested by: ${r.requestedBy || 'N/A'} on ${requestDate}</small>
+                            </p>
+                        </div>
+                        <div class="item-actions">
+                            <button onclick="deleteRequest('${r.key}','${safeTitle}')">Delete</button>
+                        </div>`;
+                    list.appendChild(el);
+                });
+            });
+        }
+        function deleteRequest(key, title) {
+            if (confirm(`Delete the request for "${title}"? This marks it as fulfilled or rejected.`)) {
+                requestRef.child(key).remove();
+            }
+        }
+
+        // --- Subscription Management ---
+        function loadSubscriptionPlans() {
+            const form = document.getElementById('subscription-plans-form');
+            form.innerHTML = '<p>Loading plans...</p>';
+            subscriptionsRef.once('value', snapshot => {
+                const plans = snapshot.val() || {
+                    gold: { name: 'Gold', price: 50, duration: 30, features: 'Access All Movies\nHD Quality\nWatch on 1 Device' },
+                    diamond: { name: 'Diamond', price: 100, duration: 90, features: 'All Gold Features\n4K Quality\nWatch on 2 Devices' },
+                    platinum: { name: 'Platinum', price: 250, duration: 180, features: 'All Diamond Features\nNo Ads\nPriority Support' },
+                };
+                subscriptionPlans = plans; // Cache the plans
+                form.innerHTML = '';
+                Object.keys(plans).forEach(key => {
+                    const plan = plans[key];
+                    const editorEl = document.createElement('div');
+                    editorEl.className = 'plan-editor';
+                    editorEl.innerHTML = `
+                        <h3>${plan.name} Plan</h3>
+                        <input type="hidden" id="plan-${key}-name" value="${plan.name}">
+                        <div class="form-group">
+                            <label for="plan-${key}-price">Price (RS/-)</label>
+                            <input type="number" id="plan-${key}-price" value="${plan.price || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-${key}-duration">Duration (Days)</label>
+                            <input type="number" id="plan-${key}-duration" value="${plan.duration || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-${key}-features">Features (one per line)</label>
+                            <textarea id="plan-${key}-features" rows="4">${plan.features || ''}</textarea>
+                        </div>
+                    `;
+                    form.appendChild(editorEl);
+                });
+            });
+        }
+        function saveSubscriptionPlans() {
+            const dataToSave = {};
+            Object.keys(subscriptionPlans).forEach(key => {
+                dataToSave[key] = {
+                    name: document.getElementById(`plan-${key}-name`).value,
+                    price: parseInt(document.getElementById(`plan-${key}-price`).value, 10),
+                    duration: parseInt(document.getElementById(`plan-${key}-duration`).value, 10),
+                    features: document.getElementById(`plan-${key}-features`).value,
+                };
+            });
+            subscriptionsRef.set(dataToSave).then(() => alert('Subscription plans saved successfully!'));
+        }
+
+        // --- User Management ---
+        function loadUsers() { const list = document.getElementById('user-list-container'); list.innerHTML = '<p>Loading...</p>'; usersRef.on('value', s => { list.innerHTML = ''; if (!s.exists()) { list.innerHTML = '<p>No users.</p>'; return; } s.forEach(cs => { const u = cs.val(); const uid = cs.key; if (u.email === 'admin@moviebox.com') return; const el = document.createElement('div'); el.className = 'list-item'; const expiryInfo = u.subscriptionExpiry ? ` (Expires: ${u.subscriptionExpiry})` : ''; el.innerHTML = `<div class="item-info"><h3>${u.email}</h3><p>Status: <strong>${u.status || 'FREE'}</strong>${expiryInfo}</p></div><div class="item-actions"><button onclick="openEditUserModal('${uid}')">Edit</button><button onclick="deleteUser('${uid}','${u.email}')">Delete</button></div>`; list.appendChild(el); }); }); }
+        
+        async function openEditUserModal(uid) {
+            await subscriptionsRef.once('value').then(s => { if(s.exists()) subscriptionPlans = s.val() });
+            usersRef.child(uid).once('value', snapshot => {
+                const user = snapshot.val();
+                document.getElementById('edit-user-uid').value = uid;
+                document.getElementById('edit-user-email').value = user.email;
+
+                const statusSelect = document.getElementById('edit-user-status');
+                statusSelect.innerHTML = '<option value="FREE">FREE</option>';
+                Object.values(subscriptionPlans).forEach(plan => {
+                    statusSelect.innerHTML += `<option value="${plan.name}">${plan.name}</option>`;
+                });
+                
+                // Handle legacy VIP status if it doesn't match a current plan name
+                if (user.status && user.status !== 'FREE' && !Object.values(subscriptionPlans).some(p => p.name === user.status)) {
+                    statusSelect.innerHTML += `<option value="${user.status}">${user.status} (Legacy)</option>`;
+                }
+
+                statusSelect.value = user.status || 'FREE';
+                document.getElementById('edit-user-expiry').value = user.subscriptionExpiry || '';
+                document.getElementById('edit-user-modal').style.display = 'block';
+            });
+        }
+
+        function updateUser() {
+            const uid = document.getElementById('edit-user-uid').value;
+            const status = document.getElementById('edit-user-status').value;
+            let expiry = document.getElementById('edit-user-expiry').value;
+
+            if (!expiry && status !== 'FREE') {
+                const selectedPlan = Object.values(subscriptionPlans).find(p => p.name === status);
+                if (selectedPlan) {
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + selectedPlan.duration);
+                    expiry = expiryDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+                }
+            } else if (status === 'FREE') {
+                expiry = null; // Remove expiry for free users
+            }
+
+            const dataToUpdate = { status: status, subscriptionExpiry: expiry };
+            usersRef.child(uid).update(dataToUpdate).then(() => { alert('User updated!'); closeModal('edit-user-modal'); });
+        }
+        function deleteUser(uid, email) { if (confirm(`Delete record for "${email}"?`)) { usersRef.child(uid).remove(); } }
+
+        // --- Analytics ---
+        async function loadAnalytics() {
+            document.getElementById('analytics-loader').classList.remove('hidden');
+            document.getElementById('analytics-content').classList.add('hidden');
+
+            try {
+                const [usersSnapshot, moviesSnapshot, statsSnapshot] = await Promise.all([
+                    usersRef.once('value'),
+                    movieRef.once('value'),
+                    statsRef.once('value')
+                ]);
+
+                // User stats
+                let totalUsers = 0, freeUsers = 0, premiumUsers = 0;
+                if(usersSnapshot.exists()){
+                    usersSnapshot.forEach(userSnap => {
+                        const user = userSnap.val();
+                        if (user.email !== 'admin@moviebox.com') {
+                            totalUsers++;
+                            const isSubscribed = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date();
+                            if (user.status !== 'FREE' && isSubscribed) {
+                                premiumUsers++;
+                            } else {
+                                freeUsers++;
+                            }
+                        }
+                    });
+                }
+                
+                // Movie stats
+                let totalViews = 0, totalLikes = 0;
+                let movies = [];
+                if(moviesSnapshot.exists()){
+                    moviesSnapshot.forEach(movieSnap => {
+                        const movie = movieSnap.val();
+                        totalViews += movie.viewCount || 0;
+                        totalLikes += movie.likeCount || 0;
+                        movies.push(movie);
+                    });
+                }
+                
+                // Guest stats
+                const guestVisits = statsSnapshot.exists() ? (statsSnapshot.val().guestVisits || 0) : 0;
+                
+                // Render stats
+                const cardsContainer = document.getElementById('stats-cards-container');
+                cardsContainer.innerHTML = `
+                    <div class="stat-card"><h3 style="color:var(--gold)">Total Users</h3><div class="count">${totalUsers}</div><p class="sub-count">Free: ${freeUsers} | Premium: ${premiumUsers}</p></div>
+                    <div class="stat-card"><h3 style="color:var(--blue)">Guest Visits</h3><div class="count">${guestVisits}</div></div>
+                    <div class="stat-card"><h3 style="color:var(--green)">Total Views</h3><div class="count">${totalViews}</div></div>
+                    <div class="stat-card"><h3 style="color:var(--deep-red)">Total Likes</h3><div class="count">${totalLikes}</div></div>
+                `;
+
+                // Render top movies
+                const topMoviesList = document.getElementById('top-viewed-movies');
+                topMoviesList.innerHTML = '';
+                movies.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+                movies.slice(0, 10).forEach(movie => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="movie-name">${movie.title}</span>
+                        <span class="movie-stats">👁️ ${movie.viewCount || 0} | ❤️ ${movie.likeCount || 0}</span>
+                    `;
+                    topMoviesList.appendChild(li);
+                });
+
+                document.getElementById('analytics-loader').classList.add('hidden');
+                document.getElementById('analytics-content').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error loading analytics:", error);
+                document.getElementById('analytics-loader').innerHTML = '<p style="color:red;">Failed to load analytics.</p>';
+            }
+        }
+
+
+        // --- Payment & Maintenance ---
+        function loadPaymentInfo() { paymentRef.on('value', snapshot => { const qrPreview = document.getElementById('qr-preview'); if (snapshot.exists()) { const data = snapshot.val(); document.getElementById('account-holder-name').value = data.accountName || ''; document.getElementById('qr-code-url').value = data.qrUrl || ''; if(data.qrUrl) { qrPreview.src = data.qrUrl; qrPreview.classList.remove('hidden'); } else { qrPreview.classList.add('hidden'); } } else { qrPreview.classList.add('hidden'); } }); }
+        function savePaymentDetails() { const accountName = document.getElementById('account-holder-name').value; const qrUrl = document.getElementById('qr-code-url').value; if(!accountName || !qrUrl) { alert('Please fill both fields.'); return; } paymentRef.set({ accountName, qrUrl }).then(() => alert('Payment details updated successfully!')).catch(error => alert('Error updating details: ' + error.message)); }
+        document.getElementById('qr-code-url').addEventListener('input', (e) => { const qrPreview = document.getElementById('qr-preview'); if(e.target.value) { qrPreview.src = e.target.value; qrPreview.classList.remove('hidden'); } else { qrPreview.classList.add('hidden'); } });
+        function loadMaintenanceSettings() { maintenanceRef.on('value', (snapshot) => { if (snapshot.exists()) { const data = snapshot.val(); document.getElementById('maintenance-status').value = data.status || 'off'; document.getElementById('maintenance-notice').value = data.notice || ''; document.getElementById('maintenance-link').value = data.contactLink || ''; } else { document.getElementById('maintenance-status').value = 'off'; document.getElementById('maintenance-notice').value = ''; document.getElementById('maintenance-link').value = ''; } }); }
+        function saveMaintenanceSettings() { const status = document.getElementById('maintenance-status').value; const notice = document.getElementById('maintenance-notice').value; const contactLink = document.getElementById('maintenance-link').value; maintenanceRef.set({ status, notice, contactLink }).then(() => alert('Maintenance settings saved successfully!')).catch(error => alert('Error saving settings: ' + error.message)); }
+    </script>
+</body>
+</html>
