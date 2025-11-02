@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOVIE BOX</title>
+    <!-- PWA-related meta tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#E50914"/>
+    <style>
+        :root{
+            --deep-red:#E50914;
+            --gold: #b49b3c;
+            --blue: #0d6efd;
+            --green: #28a745;
+        }
+
+        /* --- THEME DEFINITIONS --- */
+        body[data-theme="dark"] {
+            --main-bg:#000; --component-bg: #222; --component-bg-trans: rgba(0,0,0,.8); --header-bg: rgba(10,10,10,0.9);
+            --text-light:#f5f5f5; --text-dark:#999; --border-color:#303030; --shadow-color: rgba(0,0,0,0.4);
+            --gradient-overlay: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%); --backdrop-overlay: linear-gradient(to top,var(--main-bg) 5%,transparent 60%);
+            --slide-overlay: linear-gradient(to top,var(--main-bg) 0%,transparent 40%), linear-gradient(to right, rgba(0,0,0,0.5) 0%, transparent 50%);
+        }
+        body[data-theme="light"] {
+            --main-bg:#f0f2f5; --component-bg: #fff; --component-bg-trans: rgba(255,255,255,.8); --header-bg: rgba(245,245,245,0.9);
+            --text-light:#1c1e21; --text-dark:#65676b; --border-color:#ced0d4; --shadow-color: rgba(0,0,0,0.1);
+            --gradient-overlay: linear-gradient(to top, rgba(255,255,255,0.9) 0%, transparent 50%); --backdrop-overlay: linear-gradient(to top,var(--main-bg) 5%,transparent 60%);
+            --slide-overlay: linear-gradient(to top,var(--main-bg) 0%,transparent 40%), linear-gradient(to right, rgba(0,0,0,0.3) 0%, transparent 50%);
+        }
+        body[data-theme="neumorphism"] {
+            --main-bg: #e0e5ec; --component-bg: #e0e5ec; --component-bg-trans: #e0e5ec; --header-bg: #e0e5ecDD; --text-light: #3a4b5c; --text-dark: #6d7f92; --border-color: transparent;
+            --shadow-color: rgba(58, 75, 92, 0.2); --neu-shadow-light: #ffffff; --neu-shadow-dark: #a3b1c6; --neu-shadow-extrude: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+            --neu-shadow-intrude: inset 6px 6px 12px var(--neu-shadow-dark), inset -6px -6px 12px var(--neu-shadow-light); --gradient-overlay: linear-gradient(to top, #e0e5ec 10%, transparent 60%);
+            --backdrop-overlay: linear-gradient(to top,var(--main-bg) 15%,transparent 70%); --slide-overlay: linear-gradient(to top,var(--main-bg) 10%,transparent 50%), linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 50%);
+        }
+
+        body{background-color:var(--main-bg);color:var(--text-light);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;margin:0;overflow-x:hidden; padding-bottom: 70px; transition: background-color 0.3s ease, color 0.3s ease;}
+        .hidden{display:none!important}
+        #loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background-color:#000;display:flex;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
+        .loader-text{color:var(--deep-red);font-weight:700;font-size:2.5em;text-transform:uppercase;letter-spacing:2px}
+        .loader-text span{display:inline-block;opacity:0;animation:fadeIn .5s forwards}
+        @keyframes fadeIn{to{opacity:1;transform:translateY(0)}}
+        
+        .fullscreen-page { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--main-bg) url(https://assets.nflxext.com/ffe/siteui/vlv3/51e5354A-0268-4328-9943-7B83E3355555/8e33a571-0819-4566-9289-424a1e389e49/IN-en-20210315-popsignuptwoweeks-perspective_alpha_website_small.jpg) no-repeat center center;background-size:cover;z-index:9000;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box}
+        .fullscreen-page::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.6)}
+        .fullscreen-page .box-content {background:var(--component-bg-trans);padding:40px 25px;border-radius:8px;width:100%;max-width:400px;z-index:1; border: 1px solid var(--border-color); text-align: center;}
+        
+        .box-content h1{margin-top:0}
+        .box-content input{width:100%;background:#333;border-radius:4px;border:0;height:50px;line-height:50px;padding:16px 20px;color:#fff;box-sizing:border-box;margin-bottom:20px}
+        .box-content .btn{display:block;text-align:center;text-decoration:none;width:100%;background:var(--deep-red);border-radius:4px;border:0;font-weight:700;font-size:16px;padding:16px;color:#fff;cursor:pointer; transition: background-color 0.2s;}
+        .box-content .btn:disabled { background-color: #888; cursor: wait; }
+        .box-content .guest-btn{background:var(--border-color);margin-top:15px; color: var(--text-light);}
+        #maintenance-notice-page .btn { text-decoration: none; display: inline-block; width: auto; padding: 12px 30px; }
+
+        .spinner { width: 1.2em; height: 1.2em; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: inline-block; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #auth-error{color:var(--deep-red);background:#e87c0333;padding:10px;border-radius:4px;margin-bottom:15px}
+        #main-app{display:none}
+        .page{padding:0 5px}
+        .main-header{display:flex;justify-content:space-between;align-items:center;padding:15px;position:sticky;top:0;z-index:100;background:linear-gradient(to bottom,var(--component-bg-trans) 10%,rgba(0,0,0,0))}
+        .logo{font-size:1.5em;font-weight:700;color:var(--deep-red)}
+        #user-info{display:flex;align-items:center;gap:10px}
+        #user-info button{background:var(--deep-red);color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
+        #user-info #user-email{font-size:.8em;color:var(--text-dark)}
+        #install-app-btn { background: var(--green); color: #fff; font-weight: bold; }
+        #search-box{background:rgba(0,0,0,.5);border:1px solid var(--border-color);color:var(--text-light);padding:8px;border-radius:4px;width:120px}
+        [data-theme="light"] #search-box { background: rgba(255,255,255,0.5); }
+        
+        #user-counts-display { background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); padding: 5px 10px; border-radius: 6px; font-size: 0.75em; display: flex; gap: 8px; align-items: center; border: 1px solid var(--border-color); }
+        [data-theme="light"] #user-counts-display { background: rgba(255,255,255,0.3); }
+        #user-counts-display span { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        #user-counts-display svg { width: 14px; height: 14px; }
+        .guest-count-svg { fill: var(--text-dark); }
+        .free-count-svg { fill: var(--green); }
+        .premium-count-svg { fill: var(--gold); }
+        
+        .hero-slider{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;margin-bottom:20px;border-radius:12px}
+        .slide{width:100%;height:100%;position:absolute;background-size:cover;background-position:center;opacity:0;transition:opacity 1s ease-in-out;cursor:pointer}
+        .slide.active{opacity:1}
+        .slide::after{content:'';position:absolute;inset:0;background:var(--slide-overlay);}
+        .slider-dots{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+        .dot{width:10px;height:10px;border-radius:50%;background-color:rgba(255,255,255,.5);cursor:pointer;transition:background-color .3s ease}
+        .dot.active{background-color:var(--deep-red)}
+        .slide-info {position:absolute;bottom:15%;left:5%;color:#fff;z-index:2;opacity:0;transition:opacity .5s ease .5s;max-width:50%}
+        [data-theme="light"] .slide-info, [data-theme="neumorphism"] .slide-info { color: var(--text-light); }
+        .slide.active .slide-info {opacity:1}
+        .slide-title {font-size:1.8em;font-weight:700;margin:0 0 10px;text-shadow:2px 2px 4px rgba(0,0,0,.7)}
+        .slide-meta {display:flex;align-items:center;gap:15px;font-size:1em}
+        .slide-meta span {display:flex;align-items:center;gap:5px;font-weight:600;text-shadow:1px 1px 2px rgba(0,0,0,.7)}
+        .slide-access-badge {padding:4px 10px;font-size:.8em;font-weight:700;border-radius:4px}
+        .slide-access-badge.vip {background-color:var(--gold);color:#000}
+        .slide-access-badge.free {background-color:var(--green);color:#fff}
+        @media (max-width: 600px) { .slide-title {font-size:1.2em} .slide-meta {font-size:.8em;gap:10px} .slide-info {bottom:18%;max-width:80%} #user-counts-display { display: none; }}
+
+        .category-row{margin-bottom:30px}
+        .category-header { display: flex; justify-content: space-between; align-items: baseline; padding: 0 10px; }
+        .category-title{font-size:1.4em;font-weight:700;margin-bottom:15px; flex-grow: 1;}
+        .view-all-link { color: var(--text-dark); text-decoration: none; font-size: 0.9em; font-weight: 600; cursor: pointer; }
+        .view-all-link:hover { color: var(--deep-red); }
+        .movie-row{display:flex;overflow-x:auto;gap:10px;padding-bottom:10px;scrollbar-width:none; padding-left: 10px; padding-right: 10px;}
+        .movie-row::-webkit-scrollbar{display:none}
+
+        .movie-poster{flex:0 0 calc(33.33% - 7px);cursor:pointer;position:relative;border-radius:4px;overflow:hidden; box-shadow: 0 4px 8px var(--shadow-color); border: 1px solid var(--border-color); transition: transform 0.2s ease;}
+        .movie-poster:hover { transform: scale(1.03); }
+        .movie-poster::after {content:'';position:absolute;inset:0;background:var(--gradient-overlay);pointer-events:none;}
+        .movie-poster img{width:100%;aspect-ratio:2/3;object-fit:cover;display: block;}
+        .movie-poster .title{position:absolute;bottom:5px;left:8px;right:8px;z-index:2;font-size:.85em;font-weight:600;margin:0;color:var(--text-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        [data-theme="dark"] .movie-poster .title { color: #fff; }
+        .movie-poster .rating{position:absolute;top:5px;right:5px;background:var(--component-bg-trans);color:var(--gold);padding:3px 6px;font-size:.8em;font-weight:700;border-radius:4px;z-index:2}
+        
+        /* --- Category, Upcoming & Dev Code View Page --- */
+        #category-view-page .main-header .logo, #upcoming-page .main-header .logo, #dev-codes-page .main-header .logo { text-align: center; flex-grow: 1; }
+        .back-arrow-btn { background: none; border: none; color: var(--text-light); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+        #category-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        #category-grid-container .movie-poster { flex: auto; width: 100%; }
+
+        #upcoming-grid-container, #dev-codes-grid-container { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .upcoming-movie-item { display: flex; gap: 15px; background: var(--component-bg); padding: 15px; border-radius: 8px; align-items: center; border: 1px solid var(--border-color); }
+        .upcoming-movie-item img { width: 100px; height: 150px; object-fit: cover; border-radius: 4px; flex-shrink: 0;}
+        .upcoming-movie-details { flex-grow: 1; }
+        .upcoming-movie-details h3 { margin: 0 0 10px; font-size: 1.2em; }
+        .upcoming-movie-details p { margin: 0 0 15px; font-size: 0.9em; color: var(--text-dark); }
+        .countdown-timer { display: flex; flex-wrap: wrap; gap: 10px; }
+        .countdown-segment { text-align: center; background: var(--main-bg); padding: 8px; border-radius: 4px; min-width: 50px; border: 1px solid var(--border-color); }
+        .countdown-number { font-size: 1.5em; font-weight: bold; color: var(--deep-red); display: block; }
+        .countdown-label { font-size: 0.7em; text-transform: uppercase; color: var(--text-dark); display: block; }
+        .released-text { font-size: 1.2em; font-weight: bold; color: var(--green); }
+        @media (max-width: 400px) { .upcoming-movie-item { flex-direction: column; align-items: flex-start; } .upcoming-movie-details h3 { font-size: 1.1em; } }
+
+        /* Dev Code Page Styles */
+        .dev-code-item { background: var(--component-bg); padding: 15px; border-radius: 8px; border-left: 4px solid var(--blue); border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+        .dev-code-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .dev-code-header img { width: 60px; height: 60px; object-fit: contain; border-radius: 8px; background: var(--main-bg); padding: 5px; box-sizing: border-box; }
+        .dev-code-header-info { flex-grow: 1; }
+        .dev-code-header-info h3 { margin: 0; font-size: 1.3em; }
+        .dev-code-header-info span { font-size: 0.9em; color: var(--text-dark); background: var(--main-bg); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 5px; font-weight: bold; }
+        .dev-code-details { line-height: 1.6; color: var(--text-dark); margin: 0 0 15px 0; font-size: 0.95em; }
+        .dev-code-screenshots { display: flex; gap: 10px; margin-bottom: 15px; }
+        .dev-code-screenshots img { width: calc(50% - 5px); border-radius: 6px; cursor: pointer; border: 1px solid var(--border-color); }
+        .dev-code-actions { display: flex; gap: 10px; }
+        .dev-code-actions .btn { width: 100%; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 1em; }
+        .dev-code-actions .download-code-btn { background: var(--green); }
+        .dev-code-actions .contact-dev-btn { background: var(--gold); color: #000; }
+        .dev-code-actions .btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .access-badge{position:absolute;top:5px;left:5px;padding:3px 7px;font-size:.7em;font-weight:700;border-radius:4px;z-index:2}
+        .access-badge.vip{background-color:var(--gold);color:#000}
+        .access-badge.free{background-color:var(--green);color:#fff}
+        #details-page{display:none}
+        .details-container{position:relative}
+        .backdrop{width:100%;aspect-ratio:16/9;position:relative;box-sizing:border-box;border-radius:12px;overflow:hidden}
+        .backdrop img{width:100%;height:100%;object-fit:cover}
+        .backdrop::after{content:'';position:absolute;inset:0;background:var(--backdrop-overlay);}
+        .details-header{display:flex;margin-top:-80px;position:relative;z-index:10;padding:0 15px;align-items:flex-end;gap:15px}
+        .details-header .poster img{width:120px;height:180px;object-fit:cover;border:2px solid var(--border-color);border-radius:4px}
+        .details-info{border:1px solid var(--border-color);background-color:var(--component-bg-trans);padding:10px;border-radius:4px;flex-grow:1}
+        
+        .details-info .title{font-size:1.8em;font-weight:900;margin:0 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:5px;color:var(--text-light);text-shadow:1px 1px 0 #ab070f,2px 2px 0 #ab070f,3px 3px 0 #ab070f,4px 4px 8px rgba(0,0,0,.6)}
+        .info-pills{display:flex;flex-wrap:wrap;gap:8px;font-size:.9em}
+        .info-pills span {padding:5px 12px;border-radius:16px;font-weight:600;color:#fff}
+        #details-rating {background-color: var(--gold); color:#000 !important;}
+        #details-year {background-color: #2a6f97;}
+        #details-lang {background-color: #495057;}
+
+        .details-body{padding:20px 15px}
+        .section-title{font-size:1.2em;font-weight:700;padding-bottom:5px;border-bottom:2px solid var(--deep-red);margin:25px 0 15px}
+        .storyline{border:1px solid var(--border-color);padding:15px;border-radius:4px;line-height:1.6;color:var(--text-dark); background: var(--component-bg);}
+        
+        .details-actions { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 30px 0; }
+        .action-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; color: var(--text-dark); cursor: pointer; font-size: 0.8em; font-weight: 600; padding: 0; }
+        .action-btn:disabled { color: #666; cursor: not-allowed; }
+        .action-btn svg { width: 32px; height: 32px; fill: currentColor; }
+        .action-btn.like-btn.liked svg { fill: var(--deep-red); color: var(--deep-red); }
+        .action-btn.like-btn:hover:not(:disabled) { color: var(--deep-red); }
+        .view-counter svg { width: 32px; height: 32px; fill: var(--text-dark); }
+        .view-counter { animation: eye-pulse 3s infinite ease-in-out; }
+        @keyframes eye-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        @keyframes pulse-animation { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
+        .play-btn {display:flex;justify-content:center;align-items:center;width:80px;height:80px;padding:0 0 0 5px;background-color:var(--deep-red);color:#fff;font-size:2.5em;border:none;border-radius:50%;cursor:pointer;box-sizing:border-box;box-shadow:0 5px 15px var(--shadow-color);animation:pulse-animation 2s infinite;transition:background-color .3s ease,transform .3s ease}
+        .play-btn:hover {animation-play-state:paused;background-color:#ab070f;transform:scale(1.05)}
+
+        .v-floating-btn {position:fixed;top:45%;transform:translateY(-50%);width:auto;padding:20px 10px;font-size:1em;letter-spacing:2px;font-weight:700;text-transform:uppercase;color:#fff;cursor:pointer;z-index:101;writing-mode:vertical-rl;text-orientation:mixed;border:none;box-shadow:0 4px 12px var(--shadow-color);transition:transform .2s ease-out}
+        .v-floating-btn:hover {transform:translateY(-50%) scale(1.05)}
+        .back-btn {right:0;background-color:var(--deep-red);border-radius:15px 0 0 15px}
+        .download-btn {display:none;left:0;background-color:var(--blue);border-radius:0 15px 15px 0}
+        
+        .cast-scroll{display:flex;gap:15px;overflow-x:auto;padding-bottom:10px}
+        .cast-member{text-align:center;flex-shrink:0}
+        .cast-member img{width:100px;height:100px;object-fit:cover;border-radius:4px;cursor:pointer;border:2px solid var(--border-color)}
+        .cast-member span{display:block;font-size:.8em;margin-top:5px;width:100px}
+        .screenshots{display:flex;flex-direction:column;gap:15px;align-items:center}
+        .screenshots img{width:100%;max-width:400px;border-radius:4px;cursor:pointer;border:1px solid var(--border-color)}
+        #comments-section{margin-top:20px}
+        #comment-form textarea{width:100%;background:#333;border:1px solid var(--border-color);color:var(--text-light);padding:10px;border-radius:4px;box-sizing:border-box;margin-bottom:10px}
+        [data-theme="light"] #comment-form textarea { background: #e9ebee; }
+        #comment-form button{background:var(--deep-red);color:#fff;border:none;padding:10px 15px;border-radius:4px;cursor:pointer}
+        #comment-form button:disabled{background:var(--text-dark);cursor:not-allowed}
+        #comments-list{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+        .comment-item{background:var(--component-bg);padding:10px;border-radius:4px;border-left:3px solid var(--deep-red)}
+        .comment-item p{margin:0 0 5px}
+        .comment-item small{color:var(--text-dark);font-size:.7em}
+        
+        .modal-viewer{display:none;position:fixed;z-index:2000;inset:0;background-color:rgba(0,0,0,.9);justify-content:center;align-items:center}
+        .modal-viewer.active{display:flex}
+        .modal-viewer .close-modal-btn{position:absolute;top:15px;right:15px;font-size:2em;color:#fff;cursor:pointer}
+        #image-viewer img{max-width:95vw;max-height:95vh;border-radius:8px}
+        #video-player video{width:100vw;height:auto}
+        #login-prompt-modal .popup-content, .disclaimer-content, #movie-request-modal .popup-content {position:relative;background:var(--main-bg);padding:30px;border-radius:8px;border:1px solid var(--border-color);width:90%;max-width:450px;z-index:2001}
+        #login-prompt-modal .btn{display:inline-block;margin:5px;padding:10px 20px;text-decoration:none}
+        
+        .ad-container { position: relative; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; }
+        #ad-iframe { width: 100%; height: 100%; border: none; }
+        #ad-countdown { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.9em; z-index: 10; }
+        
+        #admin-fab {position:fixed;bottom:80px;right:20px;width:50px;height:50px;background-color:var(--gold);color:#000;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:1.8em;cursor:pointer;z-index:102;box-shadow:0 4px 10px var(--shadow-color);transition:transform .2s ease}
+        #admin-fab:hover{transform:scale(1.1)}
+        
+        .disclaimer-content {max-width:500px;text-align:center}
+        .disclaimer-content h2 {margin-top:0;color:var(--gold); text-transform: uppercase;}
+        #disclaimer-text {min-height: 150px; font-family:'Courier New',Courier,monospace;font-size:1.1em;line-height:1.6;color:var(--text-light);margin:20px 0;border-right:3px solid transparent;white-space:pre-wrap;word-wrap:break-word}
+        #disclaimer-text.typing-done {border-right-color:rgba(255,255,255,.75);animation:blink .7s step-end infinite}
+        @keyframes blink{50%{border-color:transparent}}
+        #close-disclaimer-btn {margin-top:10px;background-color:var(--border-color); color: var(--text-light);}
+        
+        #mobile-nav{position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;justify-content:space-around;align-items:center;z-index:1000;border-top:1px solid var(--border-color)}
+        .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--text-dark);cursor:pointer;flex-grow:1;height:100%;transition:color .2s ease}
+        .nav-btn svg{width:24px;height:24px;fill:currentColor}
+        .nav-btn span{font-size:.7em;font-weight:600}
+        .nav-btn.active{color:var(--deep-red)}
+        
+        #profile-page, #settings-page, #subscription-page { padding-bottom: 20px; }
+        .page-content { padding: 20px; }
+        .profile-item { background: var(--component-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); box-shadow: 0 2px 4px var(--shadow-color); }
+        .profile-item .access-badge { position: static; }
+        .profile-item .btn { width: auto; padding: 8px 15px; font-size: 0.9em;}
+        #profile-page .btn-logout { width: 100%; margin-top: 20px; background-color: var(--deep-red); }
+
+        .theme-switcher { display: flex; gap: 10px; justify-content: center; }
+        .theme-btn { padding: 10px 15px; border-radius: 6px; border: 2px solid var(--border-color); background: var(--component-bg); color: var(--text-light); font-weight: 700; cursor: pointer; transition: all 0.2s ease;}
+        .theme-btn.active { border-color: var(--deep-red); background: var(--deep-red); color: #fff; }
+        [data-theme="light"] .theme-btn.active { color: #fff; }
+
+        #language-switcher { background-color: var(--component-bg); color: var(--text-light); border: 2px solid var(--border-color); border-radius: 6px; padding: 10px; font-weight: 700; }
+        
+        #payment-details-section { margin-top: 30px; padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--component-bg); text-align: center; }
+        #payment-details-section h3 { color: var(--gold); margin-top: 0; }
+        #payment-qr-code { max-width: 200px; border-radius: 8px; margin: 10px auto; display: block; }
+        #payment-details-section .btn { background-color: var(--blue); margin-top: 15px; display: inline-block; width: auto; padding-left: 30px; padding-right: 30px; }
+
+        /* --- Subscription Page Styles --- */
+        #subscription-plans-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .pricing-card { background: var(--component-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 25px; text-align: center; width: 100%; max-width: 300px; box-shadow: 0 5px 15px var(--shadow-color); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .pricing-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px var(--shadow-color); }
+        .pricing-card.gold { border-top: 5px solid var(--gold); }
+        .pricing-card.diamond { border-top: 5px solid #b9f2ff; }
+        .pricing-card.platinum { border-top: 5px solid #e5e4e2; }
+        .pricing-card h3 { font-size: 1.8em; margin: 0; text-transform: uppercase; }
+        .pricing-card .price { font-size: 2.5em; font-weight: bold; color: var(--deep-red); margin: 10px 0; }
+        .pricing-card .price span { font-size: 0.5em; font-weight: normal; color: var(--text-dark); }
+        .pricing-card .features { list-style: none; padding: 0; margin: 20px 0; flex-grow: 1; text-align: left; }
+        .pricing-card .features li { margin-bottom: 12px; color: var(--text-dark); padding-left: 25px; position: relative; }
+        .pricing-card .features li::before { content: '✔'; color: var(--green); position: absolute; left: 0; }
+        
+        .pricing-card .btn {
+            display: block;
+            box-sizing: border-box;
+            margin-top: auto;
+            width: 100%;
+            background: var(--blue);
+            text-decoration: none;
+            padding: 15px;
+            color: white;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+
+        @media (max-width: 400px) {
+            .pricing-card {
+                padding: 20px 15px;
+            }
+            .pricing-card h3 {
+                font-size: 1.6em;
+            }
+            .pricing-card .price {
+                font-size: 2.2em;
+                margin: 8px 0;
+            }
+            .pricing-card .features li {
+                margin-bottom: 10px;
+                font-size: 0.95em;
+            }
+        }
+        
+        /* --- New styles for Movie Request Modal --- */
+        .popup-content .form-group { margin-bottom: 15px; text-align: left; }
+        .popup-content label { display: block; margin-bottom: 5px; color: var(--text-dark); }
+        .popup-content input { width: 100%; background: #333; border-radius: 4px; border: 1px solid var(--border-color); height: 50px; line-height: 50px; padding: 16px 20px; color: #fff; box-sizing: border-box; }
+        [data-theme="light"] .popup-content input { background: #e9ebee; color: #1c1e21; }
+        .popup-content .btn { width: 100%; margin-top: 10px; }
+        #request-status-msg { padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; text-align: center; }
+        #request-status-msg.success { background-color: #28a74533; color: var(--green); }
+        #request-status-msg.error { background-color: #E5091433; color: var(--deep-red); }
+
+        [data-theme="neumorphism"] .login-box, [data-theme="neumorphism"] .movie-poster, [data-theme="neumorphism"] .details-info, [data-theme="neumorphism"] .storyline, [data-theme="neumorphism"] .profile-item, [data-theme="neumorphism"] .modal-viewer .popup-content, [data-theme="neumorphism"] .disclaimer-content, [data-theme="neumorphism"] .v-floating-btn, [data-theme="neumorphism"] #admin-fab, [data-theme="neumorphism"] #payment-details-section, [data-theme="neumorphism"] .pricing-card, [data-theme="neumorphism"] .dev-code-item { box-shadow: var(--neu-shadow-extrude); }
+        [data-theme="neumorphism"] .login-box input, [data-theme="neumorphism"] #search-box, [data-theme="neumorphism"] #comment-form textarea, [data-theme="neumorphism"] #language-switcher, [data-theme="neumorphism"] .popup-content input { box-shadow: var(--neu-shadow-intrude); background: var(--main-bg); color: var(--text-light); border: none; }
+        [data-theme="neumorphism"] .btn, [data-theme="neumorphism"] #comment-form button, [data-theme="neumorphism"] .play-btn { box-shadow: var(--neu-shadow-extrude); border: none; }
+        [data-theme="neumorphism"] .btn:active, [data-theme="neumorphism"] #comment-form button:active, [data-theme="neumorphism"] .play-btn:active { box-shadow: var(--neu-shadow-intrude); }
+        [data-theme="neumorphism"] #mobile-nav { box-shadow: var(--neu-shadow-extrude); }
+        [data-theme="neumorphism"] .nav-btn.active svg { filter: drop-shadow(2px 2px 2px var(--neu-shadow-dark)) drop-shadow(-2px -2px 2px var(--neu-shadow-light)); }
+        [data-theme="neumorphism"] .details-info .title { text-shadow: 1px 1px 2px var(--neu-shadow-dark); }
+
+        /* --- WATERMARK STYLE --- */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            z-index: 10000;
+            color: var(--text-light);
+            font-size: 5vw;
+            font-weight: bold;
+            opacity: 0.1;
+            pointer-events: none; /* This makes the watermark unclickable */
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- WATERMARK ELEMENT -->
+    <div class="watermark">ZX PRIME</div>
+
+    <div id="loading-screen"><div class="loader-text"></div></div>
+
+    <div id="maintenance-notice-page" class="fullscreen-page hidden">
+        <div class="box-content">
+            <h1>Under Maintenance</h1>
+            <p id="maintenance-notice-text" style="margin: 20px 0; line-height: 1.6;"></p>
+            <a id="maintenance-contact-btn" href="#" target="_blank" class="btn">Contact Admin</a>
+        </div>
+    </div>
+    
+    <div id="login-page" class="fullscreen-page hidden">
+        <div class="box-content">
+            <h1 id="form-title" data-translate-key="login">Login</h1>
+            <p id="auth-error" class="hidden"></p>
+            <form id="auth-form">
+                <input type="email" id="email" data-translate-key="emailPlaceholder" placeholder="Email" required>
+                <input type="password" id="password" data-translate-key="passwordPlaceholder" placeholder="Password" required>
+                <button type="submit" class="btn" id="auth-btn" data-translate-key="login">Login</button>
+            </form>
+            <button class="btn guest-btn" onclick="continueAsGuest()" data-translate-key="continueAsGuest">Continue as Guest</button>
+            <div style="color:#999;margin-top:30px">
+                <span id="toggle-text" data-translate-key="newToMovieBox">New to Movie Box? </span>
+                <a href="#" id="toggle-link" style="color:#fff;font-weight:700;text-decoration:none" data-translate-key="signupNow">Sign up now.</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div id="home-page" class="page">
+            <header class="main-header">
+                <div class="logo">MOVIE BOX</div>
+                <div id="user-counts-display"></div>
+                <div id="user-info">
+                    <button id="install-app-btn" class="hidden" title="Install App">↓ Install</button>
+                    <input type="text" id="search-box" data-translate-key="searchPlaceholder" placeholder="Search...">
+                </div>
+            </header>
+            <div class="hero-slider" id="hero-slider"></div>
+            <main>
+                <div id="search-results" class="hidden">
+                    <h2 class="category-title" style="padding:0 10px" data-translate-key="searchResults">Search Results</h2>
+                    <div class="movie-row" id="search-results-row" style="padding:0 10px"></div>
+                </div>
+                <div id="main-categories">
+                    <section class="category-row">
+                        <div class="category-header">
+                            <h2 class="category-title" data-translate-key="categoryUpcoming">Coming Soon</h2>
+                            <a href="#" onclick="event.preventDefault(); showUpcomingPage()" class="view-all-link" data-translate-key="viewAll">View All</a>
+                        </div>
+                        <div class="movie-row" id="upcoming-row"></div>
+                    </section>
+                    <section class="category-row">
+                        <h2 class="category-title" data-translate-key="categoryRecent" style="padding: 0 10px;">Recent Uploads</h2>
+                        <div class="movie-row" id="recent-row"></div>
+                    </section>
+                    <section class="category-row">
+                        <div class="category-header">
+                            <h2 class="category-title" data-translate-key="categoryHollywood">Hollywood</h2>
+                            <a href="#" onclick="event.preventDefault(); showCategoryPage('Hollywood')" class="view-all-link" data-translate-key="viewAll">View All</a>
+                        </div>
+                        <div class="movie-row" id="hollywood-row"></div>
+                    </section>
+                    <section class="category-row">
+                         <div class="category-header">
+                            <h2 class="category-title" data-translate-key="categoryBollywood">Bollywood</h2>
+                            <a href="#" onclick="event.preventDefault(); showCategoryPage('Bollywood')" class="view-all-link" data-translate-key="viewAll">View All</a>
+                        </div>
+                        <div class="movie-row" id="bollywood-row"></div>
+                    </section>
+                    <section class="category-row">
+                        <div class="category-header">
+                            <h2 class="category-title" data-translate-key="categorySouth">South Indian</h2>
+                            <a href="#" onclick="event.preventDefault(); showCategoryPage('South Indian')" class="view-all-link" data-translate-key="viewAll">View All</a>
+                        </div>
+                        <div class="movie-row" id="south-indian-row"></div>
+                    </section>
+                </div>
+            </main>
+        </div>
+        <div id="details-page" class="page">
+            <button class="back-btn v-floating-btn" onclick="showHomePage()" data-translate-key="goHome">GO HOME</button>
+            <button class="download-btn v-floating-btn" id="download-btn" data-translate-key="download" title="Download Movie">↓ DOWNLOAD</button>
+            <div class="details-container">
+                <div class="backdrop" id="details-backdrop"></div>
+                <div class="details-header">
+                    <div class="poster" id="details-poster"></div>
+                    <div class="details-info">
+                        <h2 class="title" id="details-title"></h2>
+                        <div class="info-pills">
+                            <span id="details-lang"></span><span id="details-year"></span><span id="details-rating"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="details-body">
+                    <div class="details-actions" id="details-actions">
+                        <!-- Content generated by JS -->
+                    </div>
+                    <h3 class="section-title" data-translate-key="storyline">Storyline</h3>
+                    <p class="storyline" id="details-storyline"></p>
+                    <h3 class="section-title" data-translate-key="topCast">Top Billed Cast</h3>
+                    <div class="cast-scroll" id="details-cast"></div>
+                    <h3 class="section-title" data-translate-key="screenshots">Screenshots</h3>
+                    <div class="screenshots" id="details-screenshots"></div>
+                    <h3 class="section-title" data-translate-key="similarMovies">Similar Movies</h3>
+                    <div class="movie-row" id="similar-movies-row"></div>
+                    <h3 class="section-title" data-translate-key="comments">Comments</h3>
+                    <div id="comments-section">
+                        <form id="comment-form" onsubmit="postComment(event)">
+                            <textarea id="comment-text" data-translate-key="addCommentPlaceholder" placeholder="Add a public comment..." required></textarea>
+                            <button type="submit" id="comment-btn" data-translate-key="commentBtn">Comment</button>
+                        </form>
+                        <div id="comments-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="category-view-page" class="page hidden">
+             <header class="main-header">
+                <button id="category-back-btn" class="back-arrow-btn">
+                   <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                </button>
+                <div id="category-view-title" class="logo"></div>
+                <div style="width: 24px;"></div> <!-- Spacer to center title -->
+             </header>
+             <div class="page-content">
+                <div id="category-grid-container"></div>
+             </div>
+        </div>
+
+        <div id="upcoming-page" class="page hidden">
+             <header class="main-header">
+                <button id="upcoming-back-btn" class="back-arrow-btn">
+                   <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                </button>
+                <div class="logo" data-translate-key="categoryUpcoming">Coming Soon</div>
+                <div style="width: 24px;"></div> <!-- Spacer -->
+             </header>
+             <div class="page-content">
+                <div id="upcoming-grid-container"></div>
+             </div>
+        </div>
+
+        <div id="dev-codes-page" class="page hidden">
+             <header class="main-header">
+                <button id="dev-codes-back-btn" class="back-arrow-btn">
+                   <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                </button>
+                <div class="logo" data-translate-key="devCodes">Developer's Code</div>
+                <div style="width: 24px;"></div> <!-- Spacer -->
+             </header>
+             <div class="page-content">
+                <div id="dev-codes-grid-container"></div>
+             </div>
+        </div>
+
+        <div id="profile-page" class="page hidden">
+            <header class="main-header"><div class="logo" data-translate-key="profile">PROFILE</div></header>
+            <div id="profile-content-wrapper" class="page-content">
+                <!-- User details will be rendered here -->
+            </div>
+        </div>
+        <div id="settings-page" class="page hidden">
+             <header class="main-header"><div class="logo" data-translate-key="settings">SETTINGS</div></header>
+            <div class="page-content">
+                 <div class="profile-item">
+                    <span data-translate-key="appLanguage">App Language</span>
+                    <select id="language-switcher">
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                    </select>
+                </div>
+                <div class="profile-item">
+                    <span data-translate-key="appTheme">App Theme</span>
+                    <div class="theme-switcher">
+                        <button class="theme-btn" data-theme="light" data-translate-key="themeLight">Light</button>
+                        <button class="theme-btn" data-theme="dark" data-translate-key="themeDark">Dark</button>
+                        <button class="theme-btn" data-theme="neumorphism" data-translate-key="themeNeo">Neo</button>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <span data-translate-key="movieRequest">Movie Request</span>
+                    <button class="btn" onclick="openMovieRequestModal()" data-translate-key="requestBtn">Request</button>
+                </div>
+                <div class="profile-item">
+                    <span data-translate-key="devCodes">Developer's Code</span>
+                    <button class="btn" onclick="showDevCodesPage()" data-translate-key="viewBtn">View</button>
+                </div>
+                <div class="profile-item"><span data-translate-key="appVersion">App Version</span> <span>1.5.0</span></div>
+            </div>
+        </div>
+
+        <div id="subscription-page" class="page hidden">
+            <header class="main-header"><div class="logo" data-translate-key="subscriptionPlans">Subscription Plans</div></header>
+            <div class="page-content" id="subscription-plans-container">
+                <!-- Pricing cards will be rendered here by JS -->
+            </div>
+        </div>
+
+        <nav id="mobile-nav">
+            <button class="nav-btn" data-page="home" id="nav-home">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3L2 12h3v8h5z"></path></svg>
+                <span data-translate-key="home">HOME</span>
+            </button>
+            <button class="nav-btn" data-page="subscription" id="nav-subscription">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"/></svg>
+                <span data-translate-key="upgrade">UPGRADE</span>
+            </button>
+            <button class="nav-btn" data-page="profile" id="nav-profile">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4s-4 1.79-4 4s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+                <span data-translate-key="profile">PROFILE</span>
+            </button>
+            <button class="nav-btn" data-page="settings" id="nav-settings">
+                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0-.61.22l-2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5s-1.57 3.5-3.5 3.5z"></path></svg>
+                <span data-translate-key="settings">SETTINGS</span>
+            </button>
+        </nav>
+    </div>
+
+    <div id="admin-fab" data-translate-key="upgrade" title="Upgrade Plan">⭐</div>
+    <div id="disclaimer-modal" class="modal-viewer">
+        <div class="disclaimer-content">
+            <h2 id="disclaimer-title"></h2>
+            <div id="disclaimer-text"></div>
+            <button id="close-disclaimer-btn" class="btn" data-translate-key="close">Close</button>
+        </div>
+    </div>
+    <div id="image-viewer" class="modal-viewer"><span class="close-modal-btn" onclick="closeModal('image-viewer')">×</span><img src="" alt="Full view"></div>
+    <div id="video-player" class="modal-viewer"><span class="close-modal-btn" onclick="closeModal('video-player')">×</span><video controls controlsList="nodownload"></video></div>
+    <div id="login-prompt-modal" class="modal-viewer">
+        <div class="popup-content">
+            <span class="close-modal-btn" onclick="closeModal('login-prompt-modal')">×</span>
+            <h3 data-translate-key="loginRequiredTitle">Subscription Required</h3>
+            <p data-translate-key="loginRequiredDesc">You need an active subscription to watch this movie.</p>
+            <button class="btn" onclick="showSubscriptionPage()" data-translate-key="viewPlans">View Plans</button>
+            <button class="btn guest-btn" onclick="closeModal('login-prompt-modal')" data-translate-key="close">Close</button>
+        </div>
+    </div>
+    <div id="ad-player-modal" class="modal-viewer">
+        <div class="ad-container">
+            <iframe id="ad-iframe" src="" allow="autoplay" frameborder="0" scrolling="no"></iframe>
+            <div id="ad-countdown">Your movie will start in <span>15</span> seconds...</div>
+        </div>
+    </div>
+    
+    <!-- New Movie Request Modal -->
+    <div id="movie-request-modal" class="modal-viewer">
+        <div class="popup-content">
+            <span class="close-modal-btn" onclick="closeModal('movie-request-modal')">×</span>
+            <h3 data-translate-key="requestMovieTitle">Request a Movie</h3>
+            <p data-translate-key="requestMovieDesc" style="color: var(--text-dark); font-size: 0.9em; margin-bottom: 20px;">Can't find a movie you're looking for? Let us know!</p>
+            <div id="request-status-msg" class="hidden"></div>
+            <form id="movie-request-form" onsubmit="sendMovieRequest(event)">
+                <div class="form-group">
+                    <label for="request-title" data-translate-key="movieTitle">Movie Title</label>
+                    <input type="text" id="request-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="request-year" data-translate-key="releaseYear">Release Year</label>
+                    <input type="number" id="request-year" min="1900" max="2099">
+                </div>
+                <div class="form-group">
+                    <label for="request-language" data-translate-key="movieLanguage">Language</label>
+                    <input type="text" id="request-language">
+                </div>
+                <button type="submit" class="btn" id="send-request-btn" data-translate-key="sendRequest">Send Request</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script>
+        const AD_URL = "https://www.profitableratecpm.com/id78mr691?key=962e9e67496edd6bbbbad31397ad40a2";
+        const firebaseConfig = { apiKey: "AIzaSyByCu0u_oNk5XtLSvkIufK2DewkrHdKfHM", authDomain: "bolo-58fc1.firebaseapp.com", databaseURL: "https://bolo-58fc1-default-rtdb.firebaseio.com", projectId: "bolo-58fc1", storageBucket: "bolo-58fc1.firebasestorage.app", messagingSenderId: "182099553790", appId: "1:182099553790:web:4d4f987a1d1b97fe5c64af" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const movieRef = database.ref('movie');
+        const usersRef = database.ref('users');
+        const paymentRef = database.ref('Payment');
+        const maintenanceRef = database.ref('maintenance');
+        const subscriptionsRef = database.ref('subscriptions');
+        const statsRef = database.ref('stats');
+        const requestRef = database.ref('MovieRequest');
+        const upcomingMovieRef = database.ref('upcomingmovie');
+        const codeRef = database.ref('code'); // New ref for dev codes
+
+        let allMovies = [], allUpcomingMovies = [], allDevCodes = [], currentUser = null, currentMovieKey = null, commentsListener = null;
+        let dataFetched = false, authStateKnown = false;
+        let adCountdownInterval = null;
+        let userStatusListener = null;
+        let contactAdminLink = '#';
+        let countdownIntervals = {};
+
+        const translations = {
+            en: {
+                login: 'Login', signup: 'Sign Up', emailPlaceholder: 'Email', passwordPlaceholder: 'Password', continueAsGuest: 'Continue as Guest', newToMovieBox: 'New to Movie Box? ', signupNow: 'Sign up now.', alreadyHaveAccount: 'Already have an account? ',
+                logout: 'Logout', searchPlaceholder: 'Search...', searchResults: 'Search Results',
+                categoryRecent: 'Recent Uploads', categoryHollywood: 'Hollywood', categoryBollywood: 'Bollywood', categorySouth: 'South Indian', categoryUpcoming: 'Coming Soon', viewAll: 'View All',
+                goHome: 'GO HOME', download: 'DOWNLOAD', playMovieTitle: 'Play Movie', storyline: 'Storyline', topCast: 'Top Billed Cast', screenshots: 'Screenshots', similarMovies: 'Similar Movies', comments: 'Comments', addCommentPlaceholder: 'Add a public comment...', commentBtn: 'Comment',
+                profile: 'PROFILE', home: 'HOME', settings: 'SETTINGS', upgrade: 'UPGRADE',
+                emailLabel: 'Email:', statusLabel: 'Status:', guestUserMessage: 'You are currently browsing as a guest.', loginSignup: 'Login / Sign Up',
+                appLanguage: 'App Language', appTheme: 'App Theme', themeLight: 'Light', themeDark: 'Dark', themeNeo: 'Neo', appVersion: 'App Version',
+                close: 'Close', loginRequiredTitle: 'Subscription Required', loginRequiredDesc: 'You need an active subscription to watch this movie.', viewPlans: 'View Plans',
+                subscribedWelcomeTitle: "Welcome Back!", subscribedWelcomeText: "Your subscription is active. Enjoy unlimited access to all premium content. Happy watching!",
+                freeWelcomeTitle: "Get Premium Access!", freeWelcomeText: "You have limited access as a FREE user. Upgrade to a premium plan to unlock:\n✓ Watch & Download ALL Movies\n✓ High-Speed Streaming\n✓ Ad-Free Experience\n✓ 24x7 Priority Support",
+                upgradeToPremium: "Upgrade to Premium", downloadQrCode: "Download QR Code", subscriptionPlans: "Subscription Plans", contactAdmin: "Contact Admin",
+                expiresOn: "Expires on",
+                like: "Like", liked: "Liked",
+                movieRequest: "Movie Request", requestBtn: "Request",
+                requestMovieTitle: "Request a Movie", requestMovieDesc: "Can't find a movie you're looking for? Let us know!",
+                movieTitle: "Movie Title", releaseYear: "Release Year", movieLanguage: "Language", sendRequest: "Send Request",
+                requestSuccess: "Request sent successfully! We will try to add it soon.", requestError: "Failed to send request. Please try again.",
+                requestNeedsLogin: "You must be logged in to request a movie.",
+                countdownDays: "Days", countdownHours: "Hours", countdownMinutes: "Mins", countdownSeconds: "Secs",
+                releaseDate: "Release Date", released: "Released!",
+                devCodes: "Developer's Code", viewBtn: "View", downloadCode: "Download", contactDev: "Contact Dev"
+            },
+            hi: {
+                login: 'लॉग इन करें', signup: 'साइन अप करें', emailPlaceholder: 'ईमेल', passwordPlaceholder: 'पासवर्ड', continueAsGuest: 'अतिथि के रूप में जारी रखें', newToMovieBox: 'मूवी बॉक्स में नए हैं? ', signupNow: 'अभी साइन अप करें।', alreadyHaveAccount: 'पहले से ही एक खाता है? ',
+                logout: 'लॉग आउट', searchPlaceholder: 'खोजें...', searchResults: 'खोज के परिणाम',
+                categoryRecent: 'हाल के अपलोड', categoryHollywood: 'हॉलीवुड', categoryBollywood: 'बॉलीवुड', categorySouth: 'दक्षिण भारतीय', categoryUpcoming: 'जल्द आ रहा है', viewAll: 'सभी देखें',
+                goHome: 'होम पर जाएं', download: 'डाउनलोड', playMovieTitle: 'मूवी चलाएं', storyline: 'कहानी', topCast: 'मुख्य कलाकार', screenshots: 'स्क्रीनशॉट', similarMovies: 'मिलती-जुलती फिल्में', comments: 'टिप्पणियाँ', addCommentPlaceholder: 'एक सार्वजनिक टिप्पणी जोड़ें...', commentBtn: 'टिप्पणी करें',
+                profile: 'प्रोफ़ाइल', home: 'होम', settings: 'सेटिंग्स', upgrade: 'अपग्रेड',
+                emailLabel: 'ईमेल:', statusLabel: 'स्थिति:', guestUserMessage: 'आप वर्तमान में अतिथि के रूप में ब्राउज़ कर रहे हैं।', loginSignup: 'लॉग इन / साइन अप',
+                appLanguage: 'ऐप की भाषा', appTheme: 'ऐप की थीम', themeLight: 'लाइट', themeDark: 'डार्क', themeNeo: 'नियो', appVersion: 'ऐप संस्करण',
+                close: 'बंद करें', loginRequiredTitle: 'सदस्यता आवश्यक है', loginRequiredDesc: 'इस फिल्म को देखने के लिए आपके पास एक सक्रिय सदस्यता होनी चाहिए।', viewPlans: 'योजनाएं देखें',
+                subscribedWelcomeTitle: "वापसी पर स्वागत है!", subscribedWelcomeText: "आपकी सदस्यता सक्रिय है। सभी प्रीमियम सामग्री तक असीमित पहुंच का आनंद लें। हैप्पी वाचिंग!",
+                freeWelcomeTitle: "प्रीमियम एक्सेस प्राप्त करें!", freeWelcomeText: "एक मुफ़्त उपयोगकर्ता के रूप में आपके पास सीमित पहुँच है। अनलॉक करने के लिए एक प्रीमियम योजना में अपग्रेड करें:\n✓ सभी फिल्में देखें और डाउनलोड करें\n✓ हाई-स्पीड स्ट्रीमिंग\n✓ विज्ञापन-मुक्त अनुभव\n✓ 24x7 प्राथमिकता समर्थन",
+                upgradeToPremium: "प्रीमियम में अपग्रेड करें", downloadQrCode: "क्यूआर कोड डाउनलोड करें", subscriptionPlans: "सदस्यता योजनाएं", contactAdmin: "एडमिन से संपर्क करें",
+                expiresOn: "समाप्त होने की तारीख",
+                like: "पसंद", liked: "पसंद किया",
+                movieRequest: "मूवी अनुरोध", requestBtn: "अनुरोध",
+                requestMovieTitle: "एक मूवी का अनुरोध करें", requestMovieDesc: "क्या आप कोई ऐसी फिल्म ढूंढ रहे हैं जो नहीं मिल रही है? हमें बताएं!",
+                movieTitle: "मूवी का शीर्षक", releaseYear: "रिलीज का वर्ष", movieLanguage: "भाषा", sendRequest: "अनुरोध भेजें",
+                requestSuccess: "अनुरोध सफलतापूर्वक भेजा गया! हम इसे जल्द ही जोड़ने का प्रयास करेंगे।", requestError: "अनुरोध भेजने में विफल। कृपया पुन: प्रयास करें।",
+                requestNeedsLogin: "फिल्म का अनुरोध करने के लिए आपको लॉग इन होना चाहिए।",
+                countdownDays: "दिन", countdownHours: "घंटे", countdownMinutes: "मिनट", countdownSeconds: "सेकंड",
+                releaseDate: "रिलीज की तारीख", released: "रिलीज हो गई!",
+                devCodes: "डेवलपर का कोड", viewBtn: "देखें", downloadCode: "डाउनलोड", contactDev: "डेवलपर से संपर्क करें"
+            },
+        };
+
+        function isUserSubscribed() {
+            if (!currentUser || currentUser.isGuest || !currentUser.status || currentUser.status === 'FREE') return false;
+            if (!currentUser.subscriptionExpiry) return false;
+            return new Date(currentUser.subscriptionExpiry) > new Date();
+        }
+
+        function applyTheme(themeName) { document.body.dataset.theme = themeName; localStorage.setItem('movieBoxTheme', themeName); updateThemeButtonsUI(); }
+        function loadTheme() { const savedTheme = localStorage.getItem('movieBoxTheme') || 'dark'; applyTheme(savedTheme); }
+        function updateThemeButtonsUI() { const currentTheme = document.body.dataset.theme; document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === currentTheme));}
+
+        function applyLanguage(lang) { document.documentElement.lang = lang; document.querySelectorAll('[data-translate-key]').forEach(el => { const key = el.dataset.translateKey; const translation = (translations[lang] && translations[lang][key]) || translations.en[key]; if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { el.placeholder = translation; } else if (el.title) { el.title = translation; } else { el.textContent = translation; } }); localStorage.setItem('movieBoxLanguage', lang); document.getElementById('language-switcher').value = lang; }
+        function loadLanguage() { const savedLang = localStorage.getItem('movieBoxLanguage') || 'en'; applyLanguage(savedLang); }
+
+        window.onload = () => {
+            loadTheme();
+            loadLanguage();
+            const text = "MOVIE BOX"; const loaderText = document.querySelector('.loader-text');
+            text.split('').forEach((char, i) => { const span = document.createElement('span'); span.style.animationDelay = `${i * 0.1}s`; span.style.transform = 'translateY(20px)'; span.textContent = char === ' ' ? '\u00A0' : char; loaderText.appendChild(span); });
+            
+            checkMaintenanceMode();
+            
+            document.getElementById('admin-fab').addEventListener('click', showSubscriptionPage);
+            document.getElementById('nav-home').addEventListener('click', showHomePage);
+            document.getElementById('nav-profile').addEventListener('click', showProfilePage);
+            document.getElementById('nav-settings').addEventListener('click', showSettingsPage);
+            document.getElementById('nav-subscription').addEventListener('click', showSubscriptionPage);
+            document.getElementById('category-back-btn').addEventListener('click', showHomePage);
+            document.getElementById('upcoming-back-btn').addEventListener('click', showHomePage);
+            document.getElementById('dev-codes-back-btn').addEventListener('click', showSettingsPage);
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
+            document.getElementById('language-switcher').addEventListener('change', (e) => applyLanguage(e.target.value));
+        };
+
+        function checkMaintenanceMode() {
+            maintenanceRef.once('value', snapshot => {
+                const data = snapshot.val();
+                if (data && data.status === 'on') {
+                    showMaintenancePage(data);
+                } else {
+                    contactAdminLink = data?.contactLink || '#';
+                    statsRef.child('guestVisits').transaction(count => (count || 0) + 1);
+                    proceedWithAppLoad();
+                }
+            }).catch(error => { console.error("Could not check maintenance status.", error); proceedWithAppLoad(); });
+        }
+
+        function showMaintenancePage(data) { const loadingScreen = document.getElementById('loading-screen'); const maintenancePage = document.getElementById('maintenance-notice-page'); document.getElementById('maintenance-notice-text').textContent = data.notice || "The app is temporarily down for maintenance."; const contactBtn = document.getElementById('maintenance-contact-btn'); if (data.contactLink) { contactBtn.href = data.contactLink; contactBtn.classList.remove('hidden'); } else { contactBtn.classList.add('hidden'); } loadingScreen.style.opacity = '0'; setTimeout(() => { loadingScreen.classList.add('hidden'); maintenancePage.classList.remove('hidden'); }, 500); }
+
+        function proceedWithAppLoad() {
+            auth.onAuthStateChanged(user => { 
+                authStateKnown = true; 
+                if (userStatusListener) { userStatusListener.ref.off('value', userStatusListener.callback); userStatusListener = null; } 
+                if (user) { 
+                    const userNodeRef = usersRef.child(user.uid); 
+                    const callback = snapshot => { 
+                        const userData = snapshot.val() || {}; 
+                        currentUser = { isGuest: false, uid: user.uid, email: user.email, status: userData.status || 'FREE', subscriptionExpiry: userData.subscriptionExpiry || null, likes: userData.likes || {} }; 
+                        const loginPage = document.getElementById('login-page'); 
+                        if (!loginPage.classList.contains('hidden')) { showMainApp(); } 
+                    }; 
+                    userNodeRef.on('value', callback); 
+                    userStatusListener = { ref: userNodeRef, callback: callback }; 
+                } else { 
+                    currentUser = { isGuest: true, status: 'FREE', subscriptionExpiry: null, likes: {} }; 
+                    tryStartApp(); 
+                } 
+            }); 
+            
+            Promise.all([
+                movieRef.orderByChild('timestamp').once('value'),
+                upcomingMovieRef.orderByChild('releaseDate').once('value'),
+                codeRef.orderByChild('timestamp').once('value') // Fetch dev codes
+            ]).then(([movieSnapshot, upcomingSnapshot, codeSnapshot]) => {
+                allMovies = movieSnapshot.exists() ? Object.keys(movieSnapshot.val()).map(key => ({ key, ...movieSnapshot.val()[key] })).reverse() : [];
+                allUpcomingMovies = upcomingSnapshot.exists() ? Object.keys(upcomingSnapshot.val()).map(key => ({ key, ...upcomingSnapshot.val()[key] })).reverse() : [];
+                allDevCodes = codeSnapshot.exists() ? Object.keys(codeSnapshot.val()).map(key => ({ key, ...codeSnapshot.val()[key] })).reverse() : [];
+                dataFetched = true;
+                tryStartApp();
+            }).catch(err => {
+                console.error("Could not fetch data.", err);
+                dataFetched = true;
+                tryStartApp();
+            });
+        }
+
+        function tryStartApp() { if (authStateKnown && dataFetched) startApp(); }
+        
+        function startApp() {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                if (!localStorage.getItem('disclaimerShown')) {
+                    showDisclaimerPopup();
+                } else {
+                    if (currentUser && !currentUser.isGuest) { showMainApp(); } 
+                    else { document.getElementById('login-page').classList.remove('hidden'); }
+                }
+            }, 500);
+        }
+
+        function showDisclaimerPopup() {
+            const modal = document.getElementById('disclaimer-modal');
+            const lang = document.documentElement.lang;
+            const subscribed = isUserSubscribed();
+            document.getElementById('disclaimer-title').textContent = subscribed ? translations[lang].subscribedWelcomeTitle : translations[lang].freeWelcomeTitle;
+            const textToDisplay = subscribed ? translations[lang].subscribedWelcomeText : translations[lang].freeWelcomeText;
+            modal.classList.add('active');
+            typeWriter('disclaimer-text', textToDisplay, 30);
+            modal.querySelector('#close-disclaimer-btn').onclick = () => {
+                localStorage.setItem('disclaimerShown', 'true');
+                closeModal('disclaimer-modal');
+                if (currentUser && !currentUser.isGuest) { showMainApp(); } 
+                else { document.getElementById('login-page').classList.remove('hidden'); }
+            };
+        }
+        
+        function typeWriter(elementId, text, speed = 40) { const element = document.getElementById(elementId); element.innerHTML = ''; element.classList.remove('typing-done'); let i = 0; function type() { if (i < text.length) { element.innerHTML += text.charAt(i); i++; setTimeout(type, speed); } else { element.classList.add('typing-done'); } } type(); }
+
+        function showMainApp() { populateHomePage(); document.getElementById('login-page').classList.add('hidden'); document.getElementById('main-app').style.display = 'block'; showHomePage(); }
+        function continueAsGuest() { document.getElementById('login-page').classList.add('hidden'); showMainApp(); }
+
+        const toggleLink = document.getElementById('toggle-link'); let isLoginMode = true;
+        toggleLink.addEventListener('click', e => { e.preventDefault(); isLoginMode = !isLoginMode; const lang = document.documentElement.lang; document.getElementById('form-title').textContent = isLoginMode ? translations[lang].login : translations[lang].signup; document.getElementById('auth-btn').textContent = isLoginMode ? translations[lang].login : translations[lang].signup; document.getElementById('toggle-text').textContent = isLoginMode ? translations[lang].newToMovieBox : translations[lang].alreadyHaveAccount; toggleLink.textContent = isLoginMode ? translations[lang].signupNow : translations[lang].login; });
+
+        function getFriendlyAuthError(errorCode) { switch (errorCode) { case 'auth/wrong-password': case 'auth/user-not-found': case 'auth/invalid-credential': return 'Invalid email or password.'; case 'auth/email-already-in-use': return 'This email address is already registered. Please try logging in.'; case 'auth/weak-password': return 'Your password is too weak. It must be at least 6 characters long.'; case 'auth/network-request-failed': return 'Network error. Please check your internet connection.'; default: return 'An unexpected error occurred.'; } }
+
+        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
+            document.getElementById('auth-form').addEventListener('submit', e => { e.preventDefault(); const email = e.target.email.value; const password = e.target.password.value; const authBtn = document.getElementById('auth-btn'); const authError = document.getElementById('auth-error'); const originalBtnText = authBtn.textContent; authError.classList.add('hidden'); authBtn.disabled = true; authBtn.innerHTML = '<span class="spinner"></span>'; const promise = isLoginMode ? auth.signInWithEmailAndPassword(email, password) : auth.createUserWithEmailAndPassword(email, password); promise.then(userCredential => { if (!isLoginMode) { usersRef.child(userCredential.user.uid).set({ email: userCredential.user.email, status: 'FREE', subscriptionExpiry: null }); } }).catch(err => { authError.textContent = getFriendlyAuthError(err.code); authError.classList.remove('hidden'); authBtn.disabled = false; authBtn.innerHTML = originalBtnText; }); });
+        }).catch(error => { console.error("Error setting session persistence:", error); });
+        
+        function forceLogin() { closeModal('login-prompt-modal'); if (currentUser.isGuest) { document.getElementById('main-app').style.display = 'none'; document.getElementById('login-page').classList.remove('hidden'); } else { auth.signOut().then(() => window.location.reload()); } }
+        
+        function populateHomePage() { populateUpcomingRow('upcoming-row', allUpcomingMovies); populateRow('recent-row', allMovies.slice(0, 15)); populateRow('hollywood-row', allMovies.filter(m => m.category === 'Hollywood')); populateRow('bollywood-row', allMovies.filter(m => m.category === 'Bollywood')); populateRow('south-indian-row', allMovies.filter(m => m.category === 'South Indian')); startSlider(); loadUserCounts(); }
+        
+        function loadUserCounts() {
+            const display = document.getElementById('user-counts-display');
+            usersRef.on('value', snapshot => {
+                let free = 0;
+                let premium = 0;
+                if(snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const user = child.val();
+                        if (user.status === 'FREE') {
+                            free++;
+                        } else {
+                            if (user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()) {
+                                premium++;
+                            } else {
+                                free++;
+                            }
+                        }
+                    });
+                }
+                statsRef.child('guestVisits').once('value', guestSnapshot => {
+                    const guests = guestSnapshot.val() || 0;
+                     display.innerHTML = `
+                        <span title="Guests"><svg class="guest-count-svg" viewBox="0 0 24 24"><path d="M12 5.5A3.5 3.5 0 0 1 15.5 9A3.5 3.5 0 0 1 12 12.5A3.5 3.5 0 0 1 8.5 9A3.5 3.5 0 0 1 12 5.5M5 8c.56 0 1.08.15 1.53.42c-.15-1.43.24-2.88 1.39-3.95C9.57 3.11 11.16 2.5 12.5 2.5s2.93.61 4.08 1.97c1.15 1.07 1.54 2.52 1.39 3.95c.45-.27.97-.42 1.53-.42c.9 0 1.69.38 2.22.95c.53.57.86 1.37.86 2.27c0 1.45-1.18 2.62-2.62 2.62H5.62C4.18 13.84 3 12.67 3 11.22c0-.9.33-1.7.86-2.27c.53-.57 1.32-.95 2.22-.95m-2 13.5h18v-2H3v2z"/></svg> ${guests}</span>
+                        <span title="Free Users"><svg class="free-count-svg" viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4Z"/></svg> ${free}</span>
+                        <span title="Premium Users"><svg class="premium-count-svg" viewBox="0 0 24 24"><path d="m12 17.27l-5.18 3.73l1.99-6.03l-4.81-3.9l6.17-.55L12 5l2.83 5.52l6.17.55l-4.81 3.9l1.99 6.03z"/></svg> ${premium}</span>
+                    `;
+                });
+            });
+        }
+        
+        function populateRow(rowId, movies) { document.getElementById(rowId).innerHTML = movies.length ? movies.map(createMoviePoster).join('') : `<p>No movies in this category yet.</p>`; }
+        function createMoviePoster(movie) { const access = (movie.access || 'FREE').toUpperCase(); return `<div class="movie-poster" onclick="showDetailsPage('${movie.key}')"><div class="access-badge ${access.toLowerCase()}">${access === 'VIP' ? 'PREMIUM' : access}</div><img src="${movie.poster}" alt="${movie.title}" loading="lazy"><div class="rating">⭐ ${movie.rating}</div><div class="title">${movie.title}</div></div>`; }
+        
+        let sliderInterval; function startSlider() { clearInterval(sliderInterval); const sliderContainer = document.getElementById('hero-slider'); const slidesData = allMovies.slice(0, 5); if (slidesData.length === 0) return; sliderContainer.innerHTML = slidesData.map((movie, index) => { const access = (movie.access || 'FREE').toUpperCase(); return `<div class="slide ${index === 0 ? 'active' : ''}" style="background-image: url('${movie.backdrop}')" onclick="showDetailsPage('${movie.key}')"><div class="slide-info"><h2 class="slide-title">${movie.title}</h2><div class="slide-meta"><span class="slide-access-badge ${access.toLowerCase()}">${access === 'VIP' ? 'PREMIUM' : access}</span><span class="slide-rating">⭐ ${movie.rating}</span><span class="slide-year">${movie.year}</span></div></div></div>`; }).join('') + `<div class="slider-dots">${slidesData.map((_, index) => `<span class="dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>`).join('')}</div>`; const slides = sliderContainer.querySelectorAll('.slide'); const dots = sliderContainer.querySelectorAll('.dot'); if (slides.length < 2) { sliderContainer.querySelector('.slider-dots').style.display = 'none'; return; } let current = 0; const goToSlide = (index) => { slides[current].classList.remove('active'); dots[current].classList.remove('active'); current = index; slides[current].classList.add('active'); dots[current].classList.add('active'); }; const nextSlide = () => { goToSlide((current + 1) % slides.length); }; dots.forEach(dot => { dot.onclick = (e) => { e.stopPropagation(); clearInterval(sliderInterval); goToSlide(parseInt(dot.dataset.index)); sliderInterval = setInterval(nextSlide, 5000); }; }); sliderInterval = setInterval(nextSlide, 5000); }
+
+        function updateNav(activePage) { document.querySelectorAll('#mobile-nav .nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === activePage)); }
+        
+        function showPage(pageId) {
+            ['home-page', 'details-page', 'profile-page', 'settings-page', 'subscription-page', 'category-view-page', 'upcoming-page', 'dev-codes-page'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.display = (id === pageId) ? 'block' : 'none'; el.classList.toggle('hidden', id !== pageId); }
+            });
+            document.getElementById('admin-fab').style.display = ['home-page', 'profile-page'].includes(pageId) ? 'flex' : 'none';
+            if (pageId === 'home-page' && commentsListener) { database.ref('comments/' + currentMovieKey).off('child_added', commentsListener); commentsListener = null; }
+            if (pageId !== 'details-page' && adCountdownInterval) { clearInterval(adCountdownInterval); adCountdownInterval = null; const adModal = document.getElementById('ad-player-modal'); adModal.classList.remove('active'); adModal.querySelector('#ad-iframe').src = 'about:blank'; }
+            if (pageId !== 'upcoming-page') { Object.values(countdownIntervals).forEach(clearInterval); countdownIntervals = {}; }
+            window.scrollTo(0, 0);
+        }
+
+        function showHomePage() { showPage('home-page'); updateNav('home'); }
+        function showSettingsPage() { showPage('settings-page'); updateThemeButtonsUI(); updateNav('settings'); }
+
+        function showCategoryPage(categoryName) {
+            showPage('category-view-page');
+            const lang = document.documentElement.lang;
+            const categoryKey = 'category' + categoryName.replace(/\s/g, '').replace('Indian', 'South');
+            const translatedTitle = (translations[lang] && translations[lang][categoryKey]) || categoryName;
+            document.getElementById('category-view-title').textContent = translatedTitle;
+
+            const moviesForCategory = allMovies.filter(m => m.category === categoryName);
+            const gridContainer = document.getElementById('category-grid-container');
+            gridContainer.innerHTML = moviesForCategory.length 
+                ? moviesForCategory.map(createMoviePoster).join('') 
+                : `<p>No movies in this category.</p>`;
+            
+            updateNav('home'); // Keep home nav active
+        }
+
+        function showProfilePage() {
+            showPage('profile-page');
+            updateNav('profile');
+            const lang = document.documentElement.lang;
+            const container = document.getElementById('profile-content-wrapper');
+            container.innerHTML = ''; 
+
+            if (currentUser && !currentUser.isGuest) {
+                const subscribed = isUserSubscribed();
+                const status = currentUser.status || 'FREE';
+                let expiryText = '';
+                if (subscribed && currentUser.subscriptionExpiry) {
+                    const expiryDate = new Date(currentUser.subscriptionExpiry).toLocaleDateString();
+                    expiryText = `<small style="display:block; color: var(--text-dark);">${translations[lang].expiresOn}: ${expiryDate}</small>`;
+                } else if (status !== 'FREE' && !subscribed) {
+                    expiryText = `<small style="display:block; color: var(--deep-red);">Expired</small>`;
+                }
+
+                container.innerHTML = `
+                    <div class="profile-item"><span>${translations[lang].emailLabel}</span> <b>${currentUser.email}</b></div>
+                    <div class="profile-item">
+                        <span>${translations[lang].statusLabel}</span> 
+                        <div style="text-align:right;">
+                            <span class="access-badge ${status.toLowerCase()}">${status}</span>
+                            ${expiryText}
+                        </div>
+                    </div>
+                    ${!subscribed ? `<div class="profile-item"><span>${translations[lang].upgradeToPremium}</span><button class="btn" onclick="showSubscriptionPage()">${translations[lang].viewPlans}</button></div>` : ''}
+                    <button id="profile-logout-btn" class="btn btn-logout" data-translate-key="logout">${translations[lang].logout}</button>`;
+                document.getElementById('profile-logout-btn').onclick = () => auth.signOut().then(() => window.location.reload());
+            } else {
+                container.innerHTML = `
+                    <p style="text-align:center; margin: 20px 0;">${translations[lang].guestUserMessage}</p>
+                    <button class="btn" onclick="forceLogin()" data-translate-key="loginSignup">${translations[lang].loginSignup}</button>`;
+            }
+        }
+        
+        function showSubscriptionPage() {
+            closeModal('login-prompt-modal');
+            showPage('subscription-page');
+            updateNav('subscription');
+            const container = document.getElementById('subscription-plans-container');
+            container.innerHTML = '<p>Loading plans...</p>';
+            subscriptionsRef.once('value', snapshot => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p>Subscription plans are not available at the moment. Please check back later.</p>';
+                    return;
+                }
+                const plans = snapshot.val();
+                container.innerHTML = '';
+                ['gold', 'diamond', 'platinum'].forEach(key => {
+                    if (plans[key]) {
+                        const plan = plans[key];
+                        const featuresHTML = plan.features.split('\n').map(f => `<li>${f}</li>`).join('');
+                        const card = document.createElement('div');
+                        card.className = `pricing-card ${key}`;
+                        card.innerHTML = `
+                            <h3>${plan.name}</h3>
+                            <div class="price">₹${plan.price}<span> / ${plan.duration} Days</span></div>
+                            <ul class="features">${featuresHTML}</ul>
+                            <a href="${contactAdminLink}" target="_blank" class="btn" data-translate-key="contactAdmin">${translations[document.documentElement.lang].contactAdmin}</a>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+            });
+        }
+        
+        function showDetailsPage(movieKey) {
+            currentMovieKey = movieKey;
+            const movie = allMovies.find(m => m.key === movieKey); if (!movie) return;
+            showPage('details-page');
+            document.getElementById('details-backdrop').innerHTML = `<img src="${movie.backdrop || ''}" alt="Backdrop">`;
+            document.getElementById('details-poster').innerHTML = `<img src="${movie.poster || ''}" alt="Poster">`;
+            document.getElementById('details-title').textContent = movie.title;
+            document.getElementById('details-lang').textContent = movie.language;
+            document.getElementById('details-year').textContent = movie.year;
+            document.getElementById('details-rating').textContent = `⭐ ${movie.rating}`;
+            document.getElementById('details-storyline').textContent = movie.storyline;
+            
+            setupActionButtons(movie);
+            
+            document.getElementById('details-cast').innerHTML = movie.cast ? movie.cast.map(c => `<div class="cast-member"><img src="${c.photo || ''}" alt="${c.name}" onclick="showImageModal('${c.photo || ''}')"><span>${c.name}</span></div>`).join('') : '';
+            document.getElementById('details-screenshots').innerHTML = movie.screenshots ? movie.screenshots.map(ss => ss ? `<img src="${ss}" onclick="showImageModal('${ss}')">` : '').join('') : '';
+            populateRow('similar-movies-row', allMovies.filter(m => m.category === movie.category && m.key !== movie.key));
+            loadComments(movieKey);
+            document.getElementById('download-btn').style.display = 'block';
+            document.getElementById('download-btn').onclick = () => handleDownload(movie);
+            updateNav(null);
+            
+            incrementViewCount(movieKey);
+        }
+
+        function incrementViewCount(movieKey) {
+            const viewedInSession = sessionStorage.getItem('viewed_' + movieKey);
+            if (!viewedInSession) {
+                const movieViewRef = movieRef.child(movieKey).child('viewCount');
+                movieViewRef.transaction(currentCount => (currentCount || 0) + 1);
+                sessionStorage.setItem('viewed_' + movieKey, 'true');
+            }
+        }
+
+        function setupActionButtons(movie) {
+            const actionsContainer = document.getElementById('details-actions');
+            const lang = document.documentElement.lang;
+            const isLiked = currentUser && currentUser.likes && currentUser.likes[movie.key];
+
+            const likeCount = movie.likeCount || 0;
+            const viewCount = movie.viewCount || 0;
+
+            actionsContainer.innerHTML = `
+                <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" id="like-btn" onclick="handleLike('${movie.key}')">
+                    <svg viewBox="0 0 24 24"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"></path></svg>
+                    <span id="like-count">${likeCount}</span>
+                </button>
+
+                <button class="play-btn" id="play-btn" title="${translations[lang].playMovieTitle}">▶</button>
+
+                <div class="action-btn view-counter">
+                    <svg viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"></path></svg>
+                    <span id="view-count">${viewCount}</span>
+                </div>
+            `;
+            
+            document.getElementById('play-btn').onclick = () => handlePlay(movie);
+            if (currentUser.isGuest) {
+                document.getElementById('like-btn').disabled = true;
+            }
+        }
+
+        function handleLike(movieKey) {
+            if (currentUser.isGuest) return;
+
+            const likeBtn = document.getElementById('like-btn');
+            const likeCountSpan = document.getElementById('like-count');
+            const userLikesRef = usersRef.child(currentUser.uid).child('likes').child(movieKey);
+            const movieLikesRef = movieRef.child(movieKey).child('likeCount');
+
+            const isCurrentlyLiked = likeBtn.classList.contains('liked');
+
+            likeBtn.classList.toggle('liked');
+            let currentLikes = parseInt(likeCountSpan.textContent);
+            likeCountSpan.textContent = isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1;
+
+            if (isCurrentlyLiked) {
+                userLikesRef.remove();
+                movieLikesRef.transaction(count => (count > 0 ? count - 1 : 0));
+            } else {
+                userLikesRef.set(true);
+                movieLikesRef.transaction(count => (count || 0) + 1);
+            }
+        }
+        
+        function showAdThenPlay(movie) { const adModal = document.getElementById('ad-player-modal'); const adIframe = document.getElementById('ad-iframe'); const countdownSpan = document.querySelector('#ad-countdown span'); if (!movie.movieLink) { alert('Movie link is not available.'); return; } adIframe.src = AD_URL; adModal.classList.add('active'); let timeLeft = 15; countdownSpan.textContent = timeLeft; if (adCountdownInterval) clearInterval(adCountdownInterval); adCountdownInterval = setInterval(() => { timeLeft--; countdownSpan.textContent = timeLeft; if (timeLeft <= 0) { clearInterval(adCountdownInterval); adCountdownInterval = null; adModal.classList.remove('active'); adIframe.src = 'about:blank'; showVideoModal(movie.movieLink); } }, 1000); }
+
+        function handlePlay(movie) {
+            const movieAccess = (movie.access || 'FREE').toUpperCase();
+            if (movieAccess === 'VIP') {
+                if (isUserSubscribed()) {
+                    showVideoModal(movie.movieLink);
+                } else {
+                    if(currentUser.isGuest) forceLogin();
+                    else document.getElementById('login-prompt-modal').classList.add('active');
+                }
+            } else {
+                showAdThenPlay(movie);
+            }
+        }
+        
+        function handleDownload(movie) { if (!isUserSubscribed()) { alert('Only subscribed members can download movies. Please upgrade your plan.'); return; } if (!movie.movieLink) { alert('Sorry, a download link is not available.'); return; } window.open(movie.movieLink, '_blank'); }
+
+        document.getElementById('search-box').addEventListener('keyup', e => { const term = e.target.value.toLowerCase(); const resultsDiv = document.getElementById('search-results'); if (term.length > 2) { populateRow('search-results-row', allMovies.filter(m => m.title.toLowerCase().includes(term))); resultsDiv.classList.remove('hidden'); document.getElementById('main-categories').classList.add('hidden'); } else { resultsDiv.classList.add('hidden'); document.getElementById('main-categories').classList.remove('hidden'); } });
+        
+        function loadComments(movieKey) { const list = document.getElementById('comments-list'); list.innerHTML = ''; const text = document.getElementById('comment-text'); const btn = document.getElementById('comment-btn'); const lang = document.documentElement.lang; if (currentUser.isGuest) { text.placeholder = translations[lang].loginToComment || "Please log in to comment."; btn.disabled = true; } else { text.placeholder = translations[lang].addCommentPlaceholder; btn.disabled = false; } const commentsRef = database.ref('comments/' + movieKey); commentsListener = commentsRef.orderByChild('timestamp').on('child_added', snap => { const c = snap.val(); const el = document.createElement('div'); el.className = 'comment-item'; el.innerHTML = `<p>${c.text}</p><small><b>${c.email || 'Anonymous'}</b> on ${new Date(c.timestamp).toLocaleString()}</small>`; list.prepend(el); }); }
+        function postComment(event) { event.preventDefault(); const textEl = document.getElementById('comment-text'); if (currentUser.isGuest || !textEl.value.trim()) return; database.ref('comments/' + currentMovieKey).push({ text: textEl.value, email: currentUser.email, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => textEl.value = ''); }
+        
+        function closeModal(modalId) { const modal = document.getElementById(modalId); modal.classList.remove('active'); if (modalId === 'video-player') { const video = modal.querySelector('video'); video.pause(); video.src = ''; } }
+        function showImageModal(src) { if (!src) return; const v = document.getElementById('image-viewer'); v.classList.add('active'); v.querySelector('img').src = src; }
+        function showVideoModal(src) { if (!src) { alert('Movie link is not available.'); return; } const v = document.getElementById('video-player'); v.classList.add('active'); v.querySelector('video').src = src; v.querySelector('video').play(); }
+
+        // --- Upcoming Movie Logic ---
+        function populateUpcomingRow(rowId, movies) {
+            const row = document.getElementById(rowId);
+            if (!movies || movies.length === 0) {
+                row.innerHTML = `<p style="padding: 0 10px; color: var(--text-dark);">No upcoming movies announced.</p>`;
+                return;
+            }
+            const createUpcomingPoster = (movie) => `<div class="movie-poster" onclick="showUpcomingPage()"><img src="${movie.poster}" alt="${movie.title}" loading="lazy"><div class="title">${movie.title}</div></div>`;
+            row.innerHTML = movies.map(createUpcomingPoster).join('');
+        }
+
+        function showUpcomingPage() {
+            showPage('upcoming-page');
+            updateNav('home');
+            const container = document.getElementById('upcoming-grid-container');
+            container.innerHTML = '';
+            Object.values(countdownIntervals).forEach(clearInterval); // Clear old intervals
+            countdownIntervals = {};
+
+            if (!allUpcomingMovies || allUpcomingMovies.length === 0) {
+                container.innerHTML = `<p>Nothing is scheduled to release soon. Check back later!</p>`;
+                return;
+            }
+
+            allUpcomingMovies.forEach(movie => {
+                const lang = document.documentElement.lang;
+                const releaseDate = new Date(movie.releaseDate);
+                const formattedDate = releaseDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                const item = document.createElement('div');
+                item.className = 'upcoming-movie-item';
+                item.innerHTML = `
+                    <img src="${movie.poster}" alt="${movie.title}">
+                    <div class="upcoming-movie-details">
+                        <h3>${movie.title}</h3>
+                        <p>${translations[lang].releaseDate}: ${formattedDate}</p>
+                        <div class="countdown-timer" id="countdown-${movie.key}"></div>
+                    </div>
+                `;
+                container.appendChild(item);
+                startCountdown(`countdown-${movie.key}`, movie.releaseDate, movie.key);
+            });
+        }
+        
+        function startCountdown(elementId, releaseDateStr, movieKey) {
+            const countdownElement = document.getElementById(elementId);
+            const releaseDate = new Date(`${releaseDateStr}T00:00:00`).getTime();
+            const lang = document.documentElement.lang;
+
+            const updateTimer = () => {
+                const now = new Date().getTime();
+                const distance = releaseDate - now;
+
+                if (distance < 0) {
+                    clearInterval(countdownIntervals[movieKey]);
+                    countdownElement.innerHTML = `<span class="released-text">${translations[lang].released}</span>`;
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownElement.innerHTML = `
+                    <div class="countdown-segment"><span class="countdown-number">${days}</span><span class="countdown-label">${translations[lang].countdownDays}</span></div>
+                    <div class="countdown-segment"><span class="countdown-number">${hours}</span><span class="countdown-label">${translations[lang].countdownHours}</span></div>
+                    <div class="countdown-segment"><span class="countdown-number">${minutes}</span><span class="countdown-label">${translations[lang].countdownMinutes}</span></div>
+                    <div class="countdown-segment"><span class="countdown-number">${seconds}</span><span class="countdown-label">${translations[lang].countdownSeconds}</span></div>
+                `;
+            };
+
+            updateTimer(); // Initial call
+            countdownIntervals[movieKey] = setInterval(updateTimer, 1000);
+        }
+
+        // --- Developer's Code Logic ---
+        function showDevCodesPage() {
+            showPage('dev-codes-page');
+            updateNav('settings');
+            const container = document.getElementById('dev-codes-grid-container');
+            container.innerHTML = '';
+
+            if (!allDevCodes || allDevCodes.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--text-dark);">No codes are available at the moment.</p>`;
+                return;
+            }
+            allDevCodes.forEach(code => {
+                container.innerHTML += createDevCodeItem(code);
+            });
+        }
+
+        function createDevCodeItem(code) {
+            const lang = document.documentElement.lang;
+            const screenshotsHTML = code.screenshots ? code.screenshots.map(ss => `<img src="${ss}" onclick="showImageModal('${ss}')" alt="Screenshot">`).join('') : '';
+            const contactBtnHTML = code.contactLink ? `<a href="${code.contactLink}" target="_blank" class="btn contact-dev-btn" data-translate-key="contactDev">${translations[lang].contactDev}</a>` : '';
+
+            return `
+                <div class="dev-code-item">
+                    <div class="dev-code-header">
+                        <img src="${code.icon || 'https://via.placeholder.com/60?text=Code'}" alt="Code Icon">
+                        <div class="dev-code-header-info">
+                            <h3>${code.name}</h3>
+                            <span>${code.category}</span>
+                        </div>
+                    </div>
+                    <p class="dev-code-details">${code.details}</p>
+                    <div class="dev-code-screenshots">${screenshotsHTML}</div>
+                    <div class="dev-code-actions">
+                        <a href="${code.downloadLink}" target="_blank" class="btn download-code-btn">
+                            <svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" /></svg>
+                            <span data-translate-key="downloadCode">${translations[lang].downloadCode}</span>
+                        </a>
+                        ${contactBtnHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // --- Movie Request Logic ---
+        function openMovieRequestModal() {
+            const modal = document.getElementById('movie-request-modal');
+            const statusMsg = document.getElementById('request-status-msg');
+            const form = document.getElementById('movie-request-form');
+            statusMsg.classList.add('hidden');
+            form.reset();
+            form.style.display = 'block';
+            modal.classList.add('active');
+        }
+
+        function sendMovieRequest(event) {
+            event.preventDefault();
+            const lang = document.documentElement.lang;
+            const statusMsg = document.getElementById('request-status-msg');
+            const sendBtn = document.getElementById('send-request-btn');
+
+            if (currentUser.isGuest) {
+                statusMsg.textContent = translations[lang].requestNeedsLogin;
+                statusMsg.className = 'error';
+                statusMsg.classList.remove('hidden');
+                return;
+            }
+
+            const title = document.getElementById('request-title').value;
+            const year = document.getElementById('request-year').value;
+            const language = document.getElementById('request-language').value;
+
+            const requestData = {
+                title: title,
+                year: year,
+                language: language,
+                requestedBy: currentUser.email,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="spinner"></span>';
+
+            requestRef.push(requestData)
+                .then(() => {
+                    statusMsg.textContent = translations[lang].requestSuccess;
+                    statusMsg.className = 'success';
+                    document.getElementById('movie-request-form').style.display = 'none';
+                })
+                .catch(error => {
+                    statusMsg.textContent = translations[lang].requestError;
+                    statusMsg.className = 'error';
+                })
+                .finally(() => {
+                    statusMsg.classList.remove('hidden');
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = translations[lang].sendRequest;
+                });
+        }
+
+
+        // --- PWA INSTALLATION LOGIC ---
+        let deferredPrompt; const installButton = document.getElementById('install-app-btn');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installButton.classList.remove('hidden'); installButton.addEventListener('click', async () => { installButton.classList.add('hidden'); deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }); });
+        window.addEventListener('appinstalled', () => { installButton.classList.add('hidden'); deferredPrompt = null; });
+
+        // --- SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').then(reg => console.log('SW registered.')).catch(err => console.log('SW registration failed: ', err)); }); }
+    </script>
+</body>
+</html>
